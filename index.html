@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roam Electric — Standard of Electric Mobility in Africa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --roam-orange:#FF6A1A;
+    --roam-orange-dark:#E85A0C;
+    --ink:#0C0C0D;
+    --ink-soft:#1A1A1C;
+    --paper:#FAFAF8;
+    --line:#26262A;
+    --muted:#9A9A9E;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Inter',sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,h4{
+    font-family:'Montserrat',sans-serif;
+    font-weight:800;
+    letter-spacing:-0.01em;
+    line-height:1.05;
+  }
+  a{color:inherit; text-decoration:none;}
+  ul{list-style:none;}
+  img{max-width:100%; display:block;}
+  .wrap{max-width:1280px; margin:0 auto; padding:0 40px;}
+  @media (max-width:768px){ .wrap{padding:0 20px;} }
+
+  /* ---------- NAV ---------- */
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    background:rgba(255,255,255,0.97);
+    border-bottom:1px solid #ececec;
+  }
+  nav{
+    display:flex; align-items:center; justify-content:space-between;
+    max-width:1280px; margin:0 auto; padding:16px 40px;
+  }
+  .logo{
+    font-family:'Montserrat',sans-serif; font-weight:900; font-size:22px;
+    letter-spacing:0.02em;
+  }
+  .nav-links{display:flex; align-items:center; gap:36px;}
+  .nav-links a{font-size:14.5px; font-weight:600; color:#222; display:flex; align-items:center; gap:6px;}
+  .nav-links a:hover{color:var(--roam-orange);}
+  .nav-cta{display:flex; align-items:center; gap:12px;}
+  .btn{
+    font-size:13.5px; font-weight:700; padding:11px 20px; border-radius:100px;
+    display:inline-block; white-space:nowrap; transition:all .2s ease;
+    border:1.5px solid var(--ink);
+  }
+  .btn-outline{background:transparent; color:var(--ink);}
+  .btn-outline:hover{background:var(--ink); color:#fff;}
+  .btn-solid{background:var(--roam-orange); border-color:var(--roam-orange); color:#fff;}
+  .btn-solid:hover{background:var(--roam-orange-dark); border-color:var(--roam-orange-dark);}
+  .menu-toggle{display:none; flex-direction:column; gap:5px; cursor:pointer; background:none; border:none;}
+  .menu-toggle span{width:24px; height:2px; background:var(--ink);}
+
+  @media (max-width:900px){
+    .nav-links{display:none;}
+    .menu-toggle{display:flex;}
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative; height:100vh; min-height:640px;
+    display:flex; flex-direction:column; justify-content:flex-end;
+    overflow:hidden; color:#fff;
+  }
+  .hero video{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.05) 30%, rgba(0,0,0,0.55) 100%);
+    z-index:1;
+  }
+  .hero-inner{position:relative; z-index:2; padding:0 40px 64px; width:100%;}
+  .hero h1{
+    font-size:clamp(52px, 9vw, 128px);
+    letter-spacing:-0.02em;
+    text-transform:uppercase;
+    max-width:1200px;
+  }
+  .hero p{
+    margin-top:18px; font-size:18px; font-weight:600; max-width:520px;
+  }
+  .hero-whatsapp{
+    position:absolute; right:40px; bottom:64px; z-index:3;
+    display:flex; align-items:center; gap:10px;
+    background:rgba(0,0,0,0.55); backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,0.3);
+    padding:12px 20px; border-radius:100px; font-weight:700; font-size:15px;
+  }
+  .hero-whatsapp .wa-icon{
+    width:22px; height:22px; border-radius:50%; background:#25D366;
+    display:flex; align-items:center; justify-content:center; font-size:13px;
+  }
+  @media (max-width:768px){
+    .hero-whatsapp{ position:static; margin-top:24px; width:fit-content; }
+  }
+
+  /* ---------- SPLIT PROMO (Roam Air / Charging) ---------- */
+  .promo-grid{display:grid; grid-template-columns:1fr 1fr;}
+  @media (max-width:850px){ .promo-grid{grid-template-columns:1fr;} }
+  .promo{
+    position:relative; min-height:520px; display:flex; align-items:flex-end;
+    padding:44px; color:#fff; overflow:hidden;
+  }
+  .promo.air{
+    background:radial-gradient(circle at 30% 20%, #2a2a2c, var(--ink) 60%);
+  }
+  .promo.air::after{
+    content:''; position:absolute; right:-10%; top:10%; width:70%; height:70%;
+    background:radial-gradient(circle, rgba(255,106,26,0.35), transparent 70%);
+    filter:blur(10px);
+  }
+  .promo.charge{
+    background-image:url('charging_roam.png');
+    background-size:cover; background-position:center;
+  }
+  .promo.charge::before{
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.65));
+  }
+  .promo-content{position:relative; z-index:2;}
+  .promo-eyebrow{font-size:13px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; opacity:0.8; margin-bottom:10px;}
+  .promo h2{font-size:clamp(30px,4vw,44px); text-transform:uppercase;}
+  .promo p{margin-top:12px; font-size:16px; font-weight:600; max-width:340px; opacity:0.9;}
+  .promo .btn{margin-top:24px;}
+
+  /* ---------- SECTION HEADINGS ---------- */
+  .section{padding:100px 0;}
+  .section-head{max-width:640px; margin-bottom:52px;}
+  .eyebrow{
+    color:var(--roam-orange); font-weight:700; font-size:13px;
+    letter-spacing:0.14em; text-transform:uppercase; margin-bottom:14px; display:block;
+  }
+  .section-head h2{font-size:clamp(30px,4vw,46px);}
+  .section-head p{margin-top:16px; font-size:16.5px; color:#555; line-height:1.6;}
+
+  /* ---------- TESTIMONIALS ---------- */
+  .testimonials{background:var(--ink); color:#fff;}
+  .testimonials .eyebrow{color:var(--roam-orange);}
+  .testimonials .section-head h2, .testimonials .section-head p{color:#fff;}
+  .testimonials .section-head p{color:#b4b4b6;}
+  .tabs{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:40px;}
+  .tab{
+    padding:9px 18px; border-radius:100px; font-size:13.5px; font-weight:700;
+    border:1px solid #3a3a3d; color:#c9c9cb; cursor:pointer; background:transparent;
+  }
+  .tab.active{background:var(--roam-orange); border-color:var(--roam-orange); color:#fff;}
+  .quote-track-wrap{position:relative;}
+  .quote-track{
+    display:flex; gap:22px; overflow-x:auto; scroll-snap-type:x mandatory;
+    padding-bottom:10px; scrollbar-width:none;
+  }
+  .quote-track::-webkit-scrollbar{display:none;}
+  .quote-card{
+    flex:0 0 340px; scroll-snap-align:start;
+    background:var(--ink-soft); border:1px solid var(--line); border-radius:18px;
+    padding:28px; display:flex; flex-direction:column; gap:16px;
+  }
+  .stars{color:var(--roam-orange); font-size:14px; letter-spacing:2px;}
+  .quote-card p{font-size:15.5px; line-height:1.55; color:#e4e4e6; flex:1;}
+  .quote-who{font-size:13.5px; font-weight:700; color:#9a9a9e; text-transform:uppercase; letter-spacing:0.04em;}
+  .track-nav{display:flex; gap:10px; margin-top:24px;}
+  .track-nav button{
+    width:42px; height:42px; border-radius:50%; border:1px solid #3a3a3d;
+    background:transparent; color:#fff; font-size:18px; cursor:pointer;
+  }
+  .track-nav button:hover{background:var(--roam-orange); border-color:var(--roam-orange);}
+
+  /* ---------- NEWS ---------- */
+  .news-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:2px; background:#e6e6e2;}
+  @media (max-width:850px){.news-grid{grid-template-columns:1fr;}}
+  .news-card{
+    background:var(--paper); padding:36px; display:flex; flex-direction:column; gap:20px; justify-content:space-between;
+    min-height:220px;
+  }
+  .news-card h4{font-size:19px; font-weight:700; line-height:1.35;}
+  .news-card a{font-size:13.5px; font-weight:700; color:var(--roam-orange); display:flex; align-items:center; gap:6px;}
+
+  /* ---------- AWARDS ---------- */
+  .awards-strip{background:#fff; border-top:1px solid #ececec; border-bottom:1px solid #ececec;}
+  .awards-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:32px;}
+  @media (max-width:850px){.awards-grid{grid-template-columns:1fr 1fr;}}
+  @media (max-width:520px){.awards-grid{grid-template-columns:1fr;}}
+  .award-card{
+    border:1px solid #ececec; border-radius:16px; padding:28px; display:flex; flex-direction:column; gap:16px;
+  }
+  .award-card img{height:34px; width:auto; object-fit:contain; align-self:flex-start;}
+  .award-card h4{font-size:16.5px;}
+  .award-card p{font-size:14px; color:#666; line-height:1.5;}
+
+  /* ---------- FEATURED IN ---------- */
+  .press-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:24px;}
+  @media (max-width:850px){.press-grid{grid-template-columns:1fr 1fr;}}
+  @media (max-width:520px){.press-grid{grid-template-columns:1fr;}}
+  .press-card{background:#fff; border:1px solid #ececec; border-radius:16px; padding:26px; display:flex; flex-direction:column; gap:14px; min-height:150px;}
+  .press-card img{height:22px; width:auto; object-fit:contain; filter:grayscale(1); opacity:.75;}
+  .press-card p{font-size:14.5px; color:#444; line-height:1.5;}
+
+  /* ---------- CTA BANNER + MAP ---------- */
+  .cta-banner{
+    background:var(--roam-orange); color:#fff; padding:20px 0; text-align:center;
+    font-weight:700; font-size:15px;
+  }
+  .cta-banner a{text-decoration:underline;}
+  .map-embed{width:100%; height:520px; border:0; display:block;}
+
+  /* ---------- NEWSLETTER ---------- */
+  .newsletter{background:var(--ink); color:#fff; padding:70px 0;}
+  .newsletter-grid{display:flex; align-items:center; justify-content:space-between; gap:32px; flex-wrap:wrap;}
+  .newsletter h4{font-size:26px; max-width:420px;}
+  .news-form{display:flex; gap:10px; flex:1; min-width:280px; max-width:480px;}
+  .news-form input{
+    flex:1; padding:14px 18px; border-radius:100px; border:1px solid #3a3a3d;
+    background:var(--ink-soft); color:#fff; font-size:14.5px;
+  }
+  .news-form input::placeholder{color:#8a8a8e;}
+  .news-form button{
+    padding:14px 24px; border-radius:100px; border:none; background:var(--roam-orange); color:#fff;
+    font-weight:700; font-size:14px; cursor:pointer; white-space:nowrap;
+  }
+
+  /* ---------- HERO FINANCING CTA + LOGIN LINK ---------- */
+  .hero-ctas{display:flex; flex-wrap:wrap; gap:14px; margin-top:26px;}
+  .btn-finance{
+    background:#fff; color:var(--ink); border-color:#fff; font-size:14.5px; padding:14px 26px;
+    display:inline-flex; align-items:center; gap:8px;
+  }
+  .btn-finance:hover{background:var(--roam-orange); border-color:var(--roam-orange); color:#fff;}
+  .btn-finance svg{width:16px; height:16px;}
+  .nav-login{font-size:13.5px !important; font-weight:700 !important; color:#222 !important; border:1.5px solid #ddd; padding:9px 16px; border-radius:100px;}
+  .nav-login:hover{border-color:var(--roam-orange); color:var(--roam-orange) !important;}
+  .user-chip{display:flex; align-items:center; gap:10px; font-size:13.5px; font-weight:700;}
+  .user-chip button{background:none; border:none; font:inherit; color:var(--roam-orange); cursor:pointer; text-decoration:underline;}
+
+  /* ---------- FINANCING CALCULATOR ---------- */
+  .calc-section{background:#101012; color:#fff; padding:80px 0; position:relative; overflow:hidden;}
+  .calc-section::before{
+    content:''; position:absolute; right:-15%; top:-30%; width:60%; height:140%;
+    background:radial-gradient(circle, rgba(255,106,26,0.22), transparent 65%); pointer-events:none;
+  }
+  .calc-grid{display:grid; grid-template-columns:1.1fr 1fr; gap:56px; align-items:start; position:relative; z-index:1;}
+  @media (max-width:900px){ .calc-grid{grid-template-columns:1fr; gap:36px;} }
+  .calc-copy .eyebrow{color:var(--roam-orange);}
+  .calc-copy h2{font-size:clamp(28px,3.6vw,42px); margin-bottom:14px;}
+  .calc-copy p{color:#b4b4b6; font-size:16px; line-height:1.6; max-width:460px;}
+  .calc-bike-select{margin-top:26px; display:flex; flex-direction:column; gap:8px;}
+  .calc-bike-select label{font-size:12.5px; text-transform:uppercase; letter-spacing:0.08em; color:#8a8a8e; font-weight:700;}
+  .calc-bike-select select{
+    background:#1d1d20; color:#fff; border:1px solid #3a3a3d; border-radius:12px; padding:13px 16px; font-size:15px; font-weight:600;
+  }
+  .calc-card{
+    background:#1a1a1d; border:1px solid #2c2c30; border-radius:22px; padding:32px; position:relative; z-index:1;
+  }
+  .calc-row{margin-bottom:26px;}
+  .calc-row-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;}
+  .calc-row-head label{font-size:13px; text-transform:uppercase; letter-spacing:0.06em; color:#9a9a9e; font-weight:700;}
+  .calc-row-head .val{font-size:18px; font-weight:800; color:var(--roam-orange);}
+  input[type="range"]{
+    -webkit-appearance:none; width:100%; height:6px; border-radius:10px; background:#333336; outline:none;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:var(--roam-orange);
+    cursor:pointer; border:4px solid #fff;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:22px; height:22px; border-radius:50%; background:var(--roam-orange); cursor:pointer; border:4px solid #fff;
+  }
+  .tenure-pills{display:flex; flex-wrap:wrap; gap:8px;}
+  .tenure-pill{
+    padding:9px 16px; border-radius:100px; font-size:13.5px; font-weight:700; border:1px solid #3a3a3d;
+    background:transparent; color:#c9c9cb; cursor:pointer;
+  }
+  .tenure-pill.active{background:var(--roam-orange); border-color:var(--roam-orange); color:#fff;}
+  .calc-results{
+    margin-top:8px; display:grid; grid-template-columns:1fr 1fr; gap:14px; padding-top:22px; border-top:1px solid #2c2c30;
+  }
+  .calc-result{background:#101012; border:1px solid #2c2c30; border-radius:14px; padding:16px;}
+  .calc-result .label{font-size:11.5px; text-transform:uppercase; letter-spacing:0.06em; color:#8a8a8e; font-weight:700;}
+  .calc-result .num{font-size:20px; font-weight:800; margin-top:6px;}
+  .calc-result.highlight{grid-column:1 / -1; background:linear-gradient(120deg, var(--roam-orange), var(--roam-orange-dark)); border:none;}
+  .calc-result.highlight .label{color:rgba(255,255,255,0.85);}
+  .calc-result.highlight .num{font-size:30px;}
+  .calc-card .btn-solid{width:100%; text-align:center; margin-top:22px; padding:15px; font-size:14.5px; border:none; cursor:pointer;}
+  @media (max-width:480px){
+    .calc-results{grid-template-columns:1fr;}
+    .calc-card{padding:24px 20px;}
+  }
+
+  /* ---------- MODALS ---------- */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; z-index:1000; background:rgba(10,10,10,0.72);
+    backdrop-filter:blur(4px); align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:#fff; border-radius:20px; width:100%; max-width:520px; padding:36px; position:relative;
+    margin:auto 0;
+  }
+  .modal-close{position:absolute; top:18px; right:18px; background:none; border:none; font-size:22px; cursor:pointer; color:#888; line-height:1;}
+  .modal-box h3{font-size:24px; margin-bottom:8px;}
+  .modal-sub{font-size:14px; color:#666; margin-bottom:22px; line-height:1.5;}
+  .form-row{margin-bottom:16px;}
+  .form-row label{display:block; font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#666; margin-bottom:7px;}
+  .form-row input, .form-row select{
+    width:100%; padding:13px 14px; border-radius:10px; border:1.5px solid #e2e2e0; font-size:15px; font-family:inherit;
+  }
+  .form-row input:focus, .form-row select:focus{outline:none; border-color:var(--roam-orange);}
+  .form-two-col{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media (max-width:480px){.form-two-col{grid-template-columns:1fr;}}
+  .modal-summary{
+    background:#faf7f4; border:1px solid #f0e5db; border-radius:14px; padding:16px 18px; margin-bottom:18px; font-size:14px;
+  }
+  .modal-summary div{display:flex; justify-content:space-between; padding:4px 0;}
+  .modal-summary .total{font-weight:800; font-size:16px; color:var(--roam-orange); border-top:1px dashed #e6d8c9; margin-top:6px; padding-top:10px;}
+  .modal-submit{
+    width:100%; padding:15px; border-radius:100px; border:none; background:var(--roam-orange); color:#fff;
+    font-weight:700; font-size:15px; cursor:pointer; margin-top:6px;
+  }
+  .modal-submit:hover{background:var(--roam-orange-dark);}
+  .modal-submit:disabled{opacity:0.6; cursor:not-allowed;}
+  .modal-msg{font-size:13.5px; margin-top:12px; padding:10px 12px; border-radius:8px; display:none;}
+  .modal-msg.show{display:block;}
+  .modal-msg.error{background:#fdeeee; color:#a12525;}
+  .modal-msg.success{background:#eafaf0; color:#1e7d43;}
+  .modal-switch{text-align:center; font-size:13.5px; color:#666; margin-top:18px;}
+  .modal-switch a{color:var(--roam-orange); font-weight:700; cursor:pointer;}
+  .app-status-card{border:1.5px solid #eee; border-radius:14px; padding:18px; margin-bottom:12px;}
+  .app-status-card .badge{
+    display:inline-block; font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em;
+    padding:4px 12px; border-radius:100px; margin-bottom:10px;
+  }
+  .badge.pending{background:#fff3e0; color:#b46c00;}
+  .badge.approved{background:#e6f7ec; color:#1e7d43;}
+  .badge.rejected{background:#fdeeee; color:#a12525;}
+
+  /* ---------- EXTRA MOBILE POLISH ---------- */
+  @media (max-width:900px){
+    nav{padding:14px 20px;}
+    .nav-cta .btn{padding:9px 15px; font-size:12.5px;}
+  }
+  @media (max-width:640px){
+    .hero-inner{padding:0 20px 40px;}
+    .hero p{max-width:100%;}
+    .hero-ctas{flex-direction:column; align-items:stretch;}
+    .hero-ctas .btn{text-align:center;}
+    .section{padding:64px 0;}
+    .promo{padding:28px; min-height:400px;}
+    .newsletter-grid{flex-direction:column; align-items:stretch; text-align:center;}
+    .news-form{max-width:100%;}
+    .footer-top{flex-direction:column;}
+    .footer-bottom{flex-direction:column; text-align:center;}
+    .map-embed{height:340px;}
+  }
+  @media (max-width:380px){
+    .hero h1{font-size:44px;}
+    .modal-box{padding:24px 18px;}
+  }
+
+  /* ---------- FOOTER ---------- */
+  footer{background:#050505; color:#e2e2e4; padding:60px 0 30px;}
+  .footer-top{display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:40px; padding-bottom:40px; border-bottom:1px solid #232326;}
+  .footer-logo{font-family:'Montserrat',sans-serif; font-weight:900; font-size:22px; color:#fff;}
+  .social-row{display:flex; gap:14px; margin-top:18px;}
+  .social-row a{
+    width:38px; height:38px; border-radius:50%; border:1px solid #2c2c2f;
+    display:flex; align-items:center; justify-content:center; font-size:14px; color:#c9c9cb;
+  }
+  .social-row a:hover{background:var(--roam-orange); border-color:var(--roam-orange); color:#fff;}
+  .footer-bottom{padding-top:24px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; font-size:13px; color:#7a7a7e;}
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="#" class="logo">ROAM</a>
+    <div class="nav-links">
+      <a href="#roamair">Motorcycles</a>
+      <a href="#charging">Charging</a>
+      <a href="#">Our Story</a>
+      <a href="#">Resources ▾</a>
+    </div>
+    <div class="nav-cta">
+      <a href="#" class="btn btn-outline">Book Test Ride</a>
+      <a href="#" class="btn btn-solid">Contact Roam</a>
+      <div id="authArea"><a href="#" class="nav-login" id="loginNavBtn">Login</a></div>
+    </div>
+    <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
+  </nav>
+</header>
+
+<section class="hero">
+  <video autoplay muted loop playsinline poster="hero_roam.png">
+    <source src="https://cdn.prod.website-files.com/68491dec0c89cd3226833f4f%2F698b29cc6d7a24fbceb72d51_Roam%20Website%20%284%29_mp4.mp4" type="video/mp4">
+  </video>
+  <div class="hero-inner">
+    <h1>Roam Electric</h1>
+    <p>We are the Standard of Electric Mobility in Africa.</p>
+    <div class="hero-ctas">
+      <button class="btn btn-finance" id="applyFinancingBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 8h20M2 8v10a2 2 0 002 2h16a2 2 0 002-2V8M2 8l2-4h16l2 4"/></svg>
+        Apply for Financing
+      </button>
+      <a href="#calculator" class="btn btn-outline" style="border-color:rgba(255,255,255,0.6); color:#fff;">See Repayment Calculator</a>
+    </div>
+  </div>
+  <a class="hero-whatsapp" href="https://wa.me/254740666555" target="_blank">
+    <span class="wa-icon">☎</span> +254 740 666 555
+  </a>
+</section>
+
+<section class="calc-section" id="calculator">
+  <div class="wrap calc-grid">
+    <div class="calc-copy">
+      <span class="eyebrow">Own It, Your Way</span>
+      <h2>Find a Plan That Fits Your Pocket</h2>
+      <p>Slide the deposit and repayment period below to see exactly what you'd pay upfront and every month. Set by Roam — clear numbers, no surprises.</p>
+      <div class="calc-bike-select">
+        <label for="calcBikeSelect">Motorcycle</label>
+        <select id="calcBikeSelect"></select>
+      </div>
+    </div>
+    <div class="calc-card">
+      <div class="calc-row">
+        <div class="calc-row-head">
+          <label>Deposit</label>
+          <span class="val" id="depositValLabel">20%</span>
+        </div>
+        <input type="range" id="depositSlider" min="20" max="80" step="5" value="20">
+      </div>
+      <div class="calc-row">
+        <div class="calc-row-head">
+          <label>Repayment Period</label>
+        </div>
+        <div class="tenure-pills" id="tenurePills"></div>
+      </div>
+      <div class="calc-results">
+        <div class="calc-result">
+          <div class="label">Deposit Amount</div>
+          <div class="num" id="resDeposit">—</div>
+        </div>
+        <div class="calc-result">
+          <div class="label">Financed Balance</div>
+          <div class="num" id="resBalance">—</div>
+        </div>
+        <div class="calc-result highlight">
+          <div class="label">Estimated Monthly Installment</div>
+          <div class="num" id="resInstallment">—</div>
+        </div>
+      </div>
+      <button class="btn btn-solid modal-submit" id="calcApplyBtn">Apply With This Plan</button>
+    </div>
+  </div>
+</section>
+
+<section class="promo-grid">
+  <div class="promo air" id="roamair">
+    <div class="promo-content">
+      <span class="promo-eyebrow">Roam Air</span>
+      <h2>Ride Everywhere,<br>Charge Anywhere.</h2>
+      <p>Africa's electric motorcycle, engineered for range, power and the roads that need it most.</p>
+      <a href="#" class="btn btn-solid">Explore the Roam Air</a>
+    </div>
+  </div>
+  <div class="promo charge" id="charging">
+    <div class="promo-content">
+      <span class="promo-eyebrow">Charging</span>
+      <h2>Built to Keep<br>Riders Moving.</h2>
+      <p>A growing network of fast-charging stations, designed around real rider routes.</p>
+      <a href="#" class="btn btn-solid">Explore Charging Options</a>
+    </div>
+  </div>
+</section>
+
+<section class="section testimonials">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Testimonials</span>
+      <h2>What Riders Say</h2>
+      <p>Real stories from riders across Kenya who switched to Roam Air.</p>
+    </div>
+    <div class="tabs">
+      <button class="tab active">Savings</button>
+      <button class="tab">Performance</button>
+      <button class="tab">Convenience</button>
+      <button class="tab">Ownership</button>
+      <button class="tab">Innovation</button>
+    </div>
+    <div class="quote-track-wrap">
+      <div class="quote-track" id="quoteTrack">
+        <div class="quote-card">
+          <div class="stars">★★★★★</div>
+          <p>I used to spend over KES 1,000 a day on fuel. Now I charge for just KES 100 and go even further. In under six months, Roam Air paid for itself.</p>
+          <div class="quote-who">Boda Boda Operator, Nairobi</div>
+        </div>
+        <div class="quote-card">
+          <div class="stars">★★★★★</div>
+          <p>I ride through steep hills and rough roads daily. Roam Air handles it all with power and stability. The dual battery means I never worry about getting stuck.</p>
+          <div class="quote-who">Produce Transporter, Kiambu</div>
+        </div>
+        <div class="quote-card">
+          <div class="stars">★★★★★</div>
+          <p>I charge my bike overnight at home and start every day fully powered. No more queuing at petrol stations or waiting at garages. This bike is freedom.</p>
+          <div class="quote-who">Delivery Rider, Kisumu</div>
+        </div>
+        <div class="quote-card">
+          <div class="stars">★★★★★</div>
+          <p>I started riding for someone else. Roam's financing helped me own my bike. Now I make more, save more, and ride with pride.</p>
+          <div class="quote-who">Independent Rider, Eldoret</div>
+        </div>
+        <div class="quote-card">
+          <div class="stars">★★★★★</div>
+          <p>I love that Roam Air is designed in Kenya. It's built for our roads, our needs, and our future. The tech, the silence, the look, everything feels ahead of its time.</p>
+          <div class="quote-who">Rider and Entrepreneur, Nairobi</div>
+        </div>
+      </div>
+      <div class="track-nav">
+        <button onclick="scrollQuotes(-1)">←</button>
+        <button onclick="scrollQuotes(1)">→</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Top News</span>
+      <h2>Latest From Roam</h2>
+    </div>
+  </div>
+  <div class="news-grid">
+    <div class="news-card">
+      <h4>Africa's First Fast-Charging Battery adding more than 1 km per Minute with a 100,000 km Guarantee.</h4>
+      <a href="#">Read Full Story →</a>
+    </div>
+    <div class="news-card">
+      <h4>World's First Battery to Survive 18-Tonne Truck Run Over.</h4>
+      <a href="#">Read Full Story →</a>
+    </div>
+    <div class="news-card">
+      <h4>Earthshot Finalists Partner to Launch Africa's First Electric Cold Chain Delivery Network.</h4>
+      <a href="#">Read Full Story →</a>
+    </div>
+    <div class="news-card">
+      <h4>Roam named Kenya's fastest growing company by Financial Times.</h4>
+      <a href="#">Read Full Story →</a>
+    </div>
+    <div class="news-card">
+      <h4>Roam expands to Machakos in partnership with TotalEnergies.</h4>
+      <a href="#">Read Full Story →</a>
+    </div>
+    <div class="news-card">
+      <h4>Roam's Electric Motorcycle Completes First Ever Solar Powered 6,000 KM Journey Across Africa.</h4>
+      <a href="#">Read Full Story →</a>
+    </div>
+  </div>
+</section>
+
+<section class="section awards-strip">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Our Awards</span>
+      <h2>Celebrating Innovation Through Recognition</h2>
+      <p>From industry giants to global spotlights, Roam's innovation in electric mobility is earning top honors worldwide, proving that the future of transport is being built right here in Africa.</p>
+    </div>
+    <div class="awards-grid">
+      <div class="award-card">
+        <img src="https://cdn.prod.website-files.com/68491dec0c89cd3226833f4f/6a143c08582fc24a93de88b3_ft%20logo.png" alt="Financial Times">
+        <h4>Financial Times — Africa Fastest Growing EV Company</h4>
+        <p>Named by Financial Times 2025 as Africa's fastest growing electric mobility company.</p>
+      </div>
+      <div class="award-card">
+        <img src="https://cdn.prod.website-files.com/68491dec0c89cd3226833f4f/68491dec0c89cd3226833fae_Time-100-Logo.jpg" alt="TIME 100">
+        <h4>TIME 100 Most Innovative Companies</h4>
+        <p>Named one of the World's Most Innovative Companies for advancing sustainable electric mobility in Africa.</p>
+      </div>
+      <div class="award-card">
+        <img src="https://cdn.prod.website-files.com/68491dec0c89cd3226833f4f/68491dec0c89cd3226833faf_Earthshot-Logo.jpg" alt="Earthshot Prize">
+        <h4>Prince William's Earthshot Prize Finalist</h4>
+        <p>Finalist for transforming transport and reducing air pollution through clean mobility.</p>
+      </div>
+      <div class="award-card">
+        <img src="https://cdn.prod.website-files.com/68491dec0c89cd3226833f4f/68491dec0c89cd3226833fb0_Norrsken-Logo.jpg" alt="Norrsken">
+        <h4>Norrsken — Top 100 Impact Company</h4>
+        <p>Selected among the Top 100 global impact companies for leadership in clean transport.</p>
+      </div>
+      <div class="award-card">
+        <img src="https://cdn.prod.website-files.com/68491dec0c89cd3226833f4f/68491dec0c89cd3226833fb1_Set-Awards-Logo.jpg" alt="SET Awards">
+        <h4>2024 SET Awards — Mobility & Transportation</h4>
+        <p>Winner in Mobility & Transportation for pioneering renewable-powered electric transport in East Africa.</p>
+      </div>
+      <div class="award-card">
+        <img src="https://cdn.prod.website-files.com/68491dec0c89cd3226833f4f/68491dec0c89cd3226833fb2_GBM-Logo.jpg" alt="Global Brands Magazine">
+        <h4>Global Brands Magazine</h4>
+        <p>Honored for Excellence in Sustainable Mobility for shaping Africa's clean transport future.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Featured In</span>
+      <h2>Discover More</h2>
+      <p>Roam is a technology-driven electric mobility company that designs and develops electric motorcycles and electric buses for emerging markets.</p>
+    </div>
+    <div class="press-grid">
+      <div class="press-card">
+        <img src="https://cdn.prod.website-files.com/68491dec0c89cd3226833f4f/68641db7a5f544fe27a67a85_BBC%20News.avif" alt="BBC">
+        <p>Kenya is adopting electric motorbikes to cut costs and emissions.</p>
+      </div>
+      <div class="press-card">
+        <img src="https://cdn.prod.website-files.com/68491dec0c89cd3226833f4f/68641db7628c0f4a0621ebc9_CNN.avif" alt="CNN">
+        <p>Roam's electric bike completed a 6,000KM solar-powered trip from Nairobi to Stellenbosch.</p>
+      </div>
+      <div class="press-card">
+        <img src="https://cdn.prod.website-files.com/68491dec0c89cd3226833f4f/68641db7188d6b69c440367f_TC.avif" alt="TechCrunch">
+        <p>Roam raised $24 million to scale its electric motorcycle and bus production.</p>
+      </div>
+      <div class="press-card">
+        <img src="https://cdn.prod.website-files.com/68491dec0c89cd3226833f4f/68641db8e886099092086924_Bloomberg.avif" alt="Bloomberg">
+        <p>Roam sees high local demand and long-term potential.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="cta-banner">
+  Find the Nearest Roam Locations and Stores Using the Map Below —
+  <a href="https://wa.me/254740666555" target="_blank">Chat with Us to Learn More.</a>
+</div>
+<iframe class="map-embed" src="https://www.google.com/maps/d/embed?hl=en&amp;mid=155t627_noBiaFG4bq_eBauTKfMVAcNE&amp;ll=-1.2634346259106188%2C36.80349260839841&amp;z=12" loading="lazy"></iframe>
+
+<section class="newsletter">
+  <div class="wrap newsletter-grid">
+    <h4>Like what you see?<br>Sign up for our newsletter</h4>
+    <form class="news-form" onsubmit="event.preventDefault(); this.reset(); alert('Thank you. Your submission has been received.');">
+      <input type="email" placeholder="Enter your email" required>
+      <button type="submit">Subscribe Now</button>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-top">
+      <div>
+        <div class="footer-logo">ROAM</div>
+        <div class="social-row">
+          <a href="https://www.facebook.com/roamelectric/" target="_blank">f</a>
+          <a href="https://wa.me/254740666555" target="_blank">w</a>
+          <a href="https://www.youtube.com/@roamelectric" target="_blank">y</a>
+          <a href="https://www.instagram.com/roam.electric" target="_blank">i</a>
+          <a href="https://www.tiktok.com/@roam.electric" target="_blank">t</a>
+          <a href="https://x.com/roamelectric" target="_blank">x</a>
+        </div>
+      </div>
+      <div>
+        <p style="font-size:14px; color:#9a9a9e; max-width:280px;">Reach out to discover how Roam is transforming electric mobility.</p>
+        <p style="margin-top:10px; font-size:14px;"><a href="mailto:info@roam-electric.com">info@roam-electric.com</a></p>
+        <p style="margin-top:4px; font-size:14px;"><a href="tel:+254740666555">+254 740 666 555</a></p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Roam Electric. All rights reserved.</span>
+      <span>Recreated layout for reference — not affiliated with the original Webflow build.</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ===== LOGIN MODAL ===== -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('loginModal')">×</button>
+    <h3>Welcome Back</h3>
+    <p class="modal-sub">Log in to check the status of your financing application.</p>
+    <form id="loginForm">
+      <div class="form-row">
+        <label>Email</label>
+        <input type="email" id="loginEmail" required>
+      </div>
+      <div class="form-row">
+        <label>Password</label>
+        <input type="password" id="loginPassword" required>
+      </div>
+      <button class="modal-submit" type="submit">Log In</button>
+      <div class="modal-msg" id="loginMsg"></div>
+    </form>
+    <div class="modal-switch">Don't have an account? <a onclick="switchToApply()">Apply for financing</a> to create one.</div>
+  </div>
+</div>
+
+<!-- ===== FINANCING APPLICATION MODAL ===== -->
+<div class="modal-overlay" id="applyModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('applyModal')">×</button>
+    <h3>Apply for Financing</h3>
+    <p class="modal-sub">Fill in your details below. We'll create your Roam account automatically so you can track your application anytime.</p>
+    <form id="applyForm">
+      <div class="form-row">
+        <label>Motorcycle</label>
+        <select id="applyBikeSelect" required></select>
+      </div>
+      <div class="modal-summary" id="applySummary">
+        <div><span>Deposit (<span id="sumDepositPct">20</span>%)</span><span id="sumDeposit">—</span></div>
+        <div><span>Repayment period</span><span id="sumTenure">—</span></div>
+        <div class="total"><span>Monthly installment</span><span id="sumInstallment">—</span></div>
+      </div>
+      <div class="form-two-col">
+        <div class="form-row">
+          <label>Full Name</label>
+          <input type="text" id="applyName" required>
+        </div>
+        <div class="form-row">
+          <label>Phone Number</label>
+          <input type="tel" id="applyPhone" placeholder="07XX XXX XXX" required>
+        </div>
+      </div>
+      <div class="form-two-col">
+        <div class="form-row">
+          <label>Email</label>
+          <input type="email" id="applyEmail" required>
+        </div>
+        <div class="form-row">
+          <label>National ID No.</label>
+          <input type="text" id="applyIdNumber" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Location / Town</label>
+        <input type="text" id="applyLocation" required>
+      </div>
+      <div class="form-row">
+        <label>Create a Password (to track your application)</label>
+        <input type="password" id="applyPassword" minlength="6" required>
+      </div>
+      <button class="modal-submit" type="submit" id="applySubmitBtn">Submit Application</button>
+      <div class="modal-msg" id="applyMsg"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== APPLICATION STATUS MODAL ===== -->
+<div class="modal-overlay" id="statusModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('statusModal')">×</button>
+    <h3>My Financing Applications</h3>
+    <p class="modal-sub" id="statusEmailLine"></p>
+    <div id="statusList"></div>
+  </div>
+</div>
+
+<script src="roam-config.js"></script>
+<script>
+  function scrollQuotes(dir){
+    const track = document.getElementById('quoteTrack');
+    track.scrollBy({left: dir * 360, behavior: 'smooth'});
+  }
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  });
+  const toggle = document.querySelector('.menu-toggle');
+  const links = document.querySelector('.nav-links');
+  toggle.addEventListener('click', ()=>{
+    links.style.display = links.style.display === 'flex' ? 'none' : 'flex';
+    links.style.cssText += 'position:absolute; top:64px; left:0; right:0; background:#fff; flex-direction:column; padding:20px 40px; gap:18px; border-bottom:1px solid #ececec;';
+  });
+</script>
+
+<script>
+  // ======================================================
+  // ROAM FINANCING — calculator, auth, application logic
+  // ======================================================
+  let bikes = [];
+  let settingsByBike = {};
+  let currentUser = null;
+  let calcState = { bikeId: null, deposit: 20, tenure: 12 };
+
+  function openModal(id){ document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
+  function closeModal(id){ document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+  document.querySelectorAll('.modal-overlay').forEach(ov=>{
+    ov.addEventListener('click', e=>{ if(e.target === ov) closeModal(ov.id); });
+  });
+  function switchToApply(){ closeModal('loginModal'); openApplyModal(); }
+  function showMsg(id, text, type){
+    const el = document.getElementById(id);
+    el.textContent = text; el.className = 'modal-msg show ' + type;
+  }
+
+  async function loadBikesAndSettings(){
+    const { data: bikeData, error: bikeErr } = await roamClient
+      .from('motorcycles').select('*').eq('active', true).order('sort_order');
+    if (bikeErr || !bikeData) { console.error(bikeErr); return; }
+    bikes = bikeData;
+
+    const { data: settingsData } = await roamClient.from('financing_settings').select('*');
+    (settingsData || []).forEach(s => settingsByBike[s.motorcycle_id] = s);
+
+    const calcSel = document.getElementById('calcBikeSelect');
+    const applySel = document.getElementById('applyBikeSelect');
+    calcSel.innerHTML = ''; applySel.innerHTML = '';
+    bikes.forEach(b=>{
+      const opt1 = document.createElement('option'); opt1.value=b.id; opt1.textContent = b.name + ' — ' + formatKES(b.price);
+      calcSel.appendChild(opt1);
+      const opt2 = opt1.cloneNode(true);
+      applySel.appendChild(opt2);
+    });
+    if (bikes.length){
+      calcState.bikeId = bikes[0].id;
+      calcSel.value = calcState.bikeId;
+      applySel.value = calcState.bikeId;
+      setupBikeControls(calcState.bikeId);
+    }
+  }
+
+  function setupBikeControls(bikeId){
+    const s = settingsByBike[bikeId] || { min_deposit_percent:20, deposit_options:[20,30,50], tenure_months_options:[6,12,18,24], monthly_interest_rate:4 };
+    const slider = document.getElementById('depositSlider');
+    slider.min = s.min_deposit_percent;
+    if (calcState.deposit < s.min_deposit_percent) calcState.deposit = s.min_deposit_percent;
+    slider.value = calcState.deposit;
+    document.getElementById('depositValLabel').textContent = calcState.deposit + '%';
+
+    const pillsWrap = document.getElementById('tenurePills');
+    pillsWrap.innerHTML = '';
+    const tenures = s.tenure_months_options || [6,12,18,24];
+    if (!tenures.includes(calcState.tenure)) calcState.tenure = tenures[Math.floor(tenures.length/2)];
+    tenures.forEach(t=>{
+      const btn = document.createElement('button');
+      btn.type='button'; btn.className = 'tenure-pill' + (t===calcState.tenure ? ' active':'');
+      btn.textContent = t + ' mo';
+      btn.addEventListener('click', ()=>{
+        calcState.tenure = t;
+        pillsWrap.querySelectorAll('.tenure-pill').forEach(p=>p.classList.remove('active'));
+        btn.classList.add('active');
+        runCalc();
+      });
+      pillsWrap.appendChild(btn);
+    });
+    runCalc();
+  }
+
+  function runCalc(){
+    const bike = bikes.find(b=>b.id === calcState.bikeId);
+    if (!bike) return;
+    const s = settingsByBike[calcState.bikeId] || { monthly_interest_rate:4 };
+    const r = calcFinancing(bike.price, calcState.deposit, calcState.tenure, s.monthly_interest_rate);
+    document.getElementById('resDeposit').textContent = formatKES(r.deposit);
+    document.getElementById('resBalance').textContent = formatKES(r.balance);
+    document.getElementById('resInstallment').textContent = formatKES(r.monthlyInstallment) + '/mo';
+    return r;
+  }
+
+  document.getElementById('calcBikeSelect').addEventListener('change', e=>{
+    calcState.bikeId = e.target.value;
+    setupBikeControls(calcState.bikeId);
+  });
+  document.getElementById('depositSlider').addEventListener('input', e=>{
+    calcState.deposit = Number(e.target.value);
+    document.getElementById('depositValLabel').textContent = calcState.deposit + '%';
+    runCalc();
+  });
+
+  function openApplyModal(){
+    document.getElementById('applyBikeSelect').value = calcState.bikeId;
+    updateApplySummary();
+    openModal('applyModal');
+  }
+  function updateApplySummary(){
+    const bikeId = document.getElementById('applyBikeSelect').value;
+    const bike = bikes.find(b=>b.id === bikeId);
+    if (!bike) return;
+    const s = settingsByBike[bikeId] || { monthly_interest_rate:4 };
+    const r = calcFinancing(bike.price, calcState.deposit, calcState.tenure, s.monthly_interest_rate);
+    document.getElementById('sumDepositPct').textContent = calcState.deposit;
+    document.getElementById('sumDeposit').textContent = formatKES(r.deposit);
+    document.getElementById('sumTenure').textContent = calcState.tenure + ' months';
+    document.getElementById('sumInstallment').textContent = formatKES(r.monthlyInstallment) + '/mo';
+  }
+  document.getElementById('applyBikeSelect').addEventListener('change', updateApplySummary);
+
+  document.getElementById('applyFinancingBtn').addEventListener('click', openApplyModal);
+  document.getElementById('calcApplyBtn').addEventListener('click', openApplyModal);
+  document.getElementById('loginNavBtn').addEventListener('click', e=>{ e.preventDefault(); if(!currentUser) openModal('loginModal'); });
+
+  // ---- Application submit (creates account under the hood + saves application) ----
+  document.getElementById('applyForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const btn = document.getElementById('applySubmitBtn');
+    btn.disabled = true; btn.textContent = 'Submitting…';
+    const bikeId = document.getElementById('applyBikeSelect').value;
+    const bike = bikes.find(b=>b.id === bikeId);
+    const s = settingsByBike[bikeId] || { monthly_interest_rate:4 };
+    const r = calcFinancing(bike.price, calcState.deposit, calcState.tenure, s.monthly_interest_rate);
+
+    const email = document.getElementById('applyEmail').value.trim();
+    const password = document.getElementById('applyPassword').value;
+    const fullName = document.getElementById('applyName').value.trim();
+    const phone = document.getElementById('applyPhone').value.trim();
+    const idNumber = document.getElementById('applyIdNumber').value.trim();
+    const location = document.getElementById('applyLocation').value.trim();
+
+    try{
+      let session = null;
+      const { data: existingSession } = await roamClient.auth.getSession();
+      if (existingSession && existingSession.session && existingSession.session.user.email === email){
+        session = existingSession.session;
+      } else {
+        const { data: signUpData, error: signUpErr } = await roamClient.auth.signUp({
+          email, password, options: { data: { full_name: fullName, phone } }
+        });
+        if (signUpErr) throw signUpErr;
+        session = signUpData.session;
+        if (!session){
+          const { data: signInData, error: signInErr } = await roamClient.auth.signInWithPassword({ email, password });
+          if (!signInErr) session = signInData.session;
+        }
+      }
+      if (!session){
+        showMsg('applyMsg', 'Account created! Please check your email to verify it, then log in from the top of the page to finish submitting your application.', 'success');
+        btn.disabled = false; btn.textContent = 'Submit Application';
+        return;
+      }
+
+      const { error: insertErr } = await roamClient.from('financing_applications').insert({
+        user_id: session.user.id,
+        motorcycle_id: bikeId,
+        full_name: fullName,
+        email, phone,
+        id_number: idNumber,
+        location,
+        deposit_percent: calcState.deposit,
+        deposit_amount: r.deposit,
+        tenure_months: calcState.tenure,
+        monthly_installment: r.monthlyInstallment,
+        status: 'pending'
+      });
+      if (insertErr) throw insertErr;
+
+      currentUser = session.user;
+      updateAuthArea();
+      showMsg('applyMsg', 'Application submitted! We\'ll reach out via phone or email once it\'s reviewed.', 'success');
+      document.getElementById('applyForm').reset();
+      setTimeout(()=>closeModal('applyModal'), 2200);
+    } catch(err){
+      showMsg('applyMsg', err.message || 'Something went wrong. Please try again.', 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Submit Application';
+    }
+  });
+
+  // ---- Login ----
+  document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const { data, error } = await roamClient.auth.signInWithPassword({ email, password });
+    if (error){ showMsg('loginMsg', error.message, 'error'); return; }
+    currentUser = data.user;
+    updateAuthArea();
+    closeModal('loginModal');
+    document.getElementById('loginForm').reset();
+    openStatusModal();
+  });
+
+  async function openStatusModal(){
+    document.getElementById('statusEmailLine').textContent = currentUser ? currentUser.email : '';
+    const listEl = document.getElementById('statusList');
+    listEl.innerHTML = 'Loading…';
+    const { data, error } = await roamClient.from('financing_applications')
+      .select('*').eq('user_id', currentUser.id).order('created_at', { ascending:false });
+    if (error || !data || !data.length){
+      listEl.innerHTML = '<p style="color:#666;font-size:14px;">No applications yet. Apply for financing from the homepage anytime.</p>';
+    } else {
+      listEl.innerHTML = data.map(app=>{
+        const bike = bikes.find(b=>b.id===app.motorcycle_id);
+        return `<div class="app-status-card">
+          <span class="badge ${app.status}">${app.status}</span>
+          <div style="font-weight:800; font-size:16px; margin-bottom:6px;">${bike ? bike.name : 'Motorcycle'}</div>
+          <div style="font-size:14px; color:#555; line-height:1.7;">
+            Deposit: ${formatKES(app.deposit_amount)} (${app.deposit_percent}%)<br>
+            Tenure: ${app.tenure_months} months<br>
+            Installment: ${formatKES(app.monthly_installment)}/mo
+            ${app.admin_notes ? '<br>Note: ' + app.admin_notes : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+    openModal('statusModal');
+  }
+
+  function updateAuthArea(){
+    const area = document.getElementById('authArea');
+    if (currentUser){
+      area.innerHTML = `<div class="user-chip">Hi, ${(currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email.split('@')[0]}
+        <button id="myAppsBtn">My Applications</button> · <button id="logoutBtn">Logout</button></div>`;
+      document.getElementById('myAppsBtn').addEventListener('click', openStatusModal);
+      document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+        await roamClient.auth.signOut();
+        currentUser = null;
+        updateAuthArea();
+      });
+    } else {
+      area.innerHTML = `<a href="#" class="nav-login" id="loginNavBtn">Login</a>`;
+      document.getElementById('loginNavBtn').addEventListener('click', e=>{ e.preventDefault(); openModal('loginModal'); });
+    }
+  }
+
+  (async function init(){
+    await loadBikesAndSettings();
+    const { data } = await roamClient.auth.getSession();
+    if (data && data.session){ currentUser = data.session.user; updateAuthArea(); }
+    roamClient.auth.onAuthStateChange((_event, session)=>{
+      currentUser = session ? session.user : null;
+    });
+  })();
+</script>
+
+</body>
+</html>

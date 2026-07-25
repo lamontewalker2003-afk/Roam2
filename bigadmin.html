@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Roam Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --roam-orange:#FF6A1A; --roam-orange-dark:#E85A0C; --ink:#0C0C0D; --paper:#F5F5F3;
+    --line:#e6e6e3; --muted:#8a8a8e; --card:#ffffff;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Inter',sans-serif; background:var(--paper); color:var(--ink); -webkit-font-smoothing:antialiased;}
+  h1,h2,h3,h4{font-family:'Montserrat',sans-serif; font-weight:800; letter-spacing:-0.01em;}
+  a{color:inherit;}
+  button{font-family:inherit; cursor:pointer;}
+  input,select,textarea{font-family:inherit;}
+
+  /* ---- gate screen (login / first-time setup) ---- */
+  .gate{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;}
+  .gate-box{background:#fff; border-radius:20px; padding:44px; width:100%; max-width:420px; box-shadow:0 10px 40px rgba(0,0,0,0.06);}
+  .gate-logo{font-size:22px; font-weight:900; margin-bottom:6px;}
+  .gate-tag{color:var(--muted); font-size:13.5px; margin-bottom:28px;}
+  .form-row{margin-bottom:16px;}
+  .form-row label{display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#666; margin-bottom:7px;}
+  .form-row input, .form-row select, .form-row textarea{
+    width:100%; padding:12px 14px; border-radius:10px; border:1.5px solid #e2e2e0; font-size:14.5px;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus{outline:none; border-color:var(--roam-orange);}
+  .form-two-col{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media (max-width:480px){.form-two-col{grid-template-columns:1fr;}}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 20px; border-radius:100px;
+    font-weight:700; font-size:14px; border:1.5px solid var(--ink); background:transparent; color:var(--ink); transition:all .15s;
+  }
+  .btn-primary{background:var(--roam-orange); border-color:var(--roam-orange); color:#fff; width:100%;}
+  .btn-primary:hover{background:var(--roam-orange-dark);}
+  .btn-primary:disabled{opacity:0.6; cursor:not-allowed;}
+  .btn-ghost{border-color:#ddd; color:#444; font-size:13px; padding:9px 16px;}
+  .btn-ghost:hover{border-color:var(--roam-orange); color:var(--roam-orange);}
+  .btn-danger{border-color:#e2534d; color:#e2534d; font-size:12.5px; padding:8px 14px;}
+  .btn-danger:hover{background:#e2534d; color:#fff;}
+  .btn-small{font-size:12.5px; padding:8px 14px;}
+  .gate-switch{text-align:center; font-size:13.5px; color:#666; margin-top:16px;}
+  .gate-switch a{color:var(--roam-orange); font-weight:700; cursor:pointer;}
+  .msg{font-size:13.5px; margin-top:12px; padding:10px 12px; border-radius:8px; display:none;}
+  .msg.show{display:block;}
+  .msg.error{background:#fdeeee; color:#a12525;}
+  .msg.success{background:#eafaf0; color:#1e7d43;}
+  .badge-setup{background:#fff3e0; color:#b46c00; font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; padding:5px 12px; border-radius:100px; display:inline-block; margin-bottom:16px;}
+
+  /* ---- dashboard shell ---- */
+  #dashboard{display:none;}
+  .topbar{
+    background:#fff; border-bottom:1px solid var(--line); padding:16px 28px; display:flex; align-items:center;
+    justify-content:space-between; position:sticky; top:0; z-index:50; flex-wrap:wrap; gap:12px;
+  }
+  .topbar .brand{font-weight:900; font-size:18px; display:flex; align-items:center; gap:10px;}
+  .topbar .brand span{background:var(--ink); color:#fff; font-size:11px; padding:3px 9px; border-radius:6px; letter-spacing:0.04em;}
+  .topbar .who{font-size:13px; color:var(--muted);}
+  .tabs-bar{display:flex; gap:8px; padding:14px 28px; background:#fff; border-bottom:1px solid var(--line); overflow-x:auto;}
+  .tab-btn{
+    padding:10px 18px; border-radius:100px; font-size:13.5px; font-weight:700; border:1.5px solid var(--line);
+    background:transparent; color:#555; white-space:nowrap;
+  }
+  .tab-btn.active{background:var(--ink); border-color:var(--ink); color:#fff;}
+  main{max-width:1180px; margin:0 auto; padding:32px 24px 80px;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .panel-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px;}
+  .panel-head h2{font-size:22px;}
+  .filter-row{display:flex; gap:8px; flex-wrap:wrap;}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:20px;}
+  .grid-2{display:grid; grid-template-columns:repeat(2,1fr); gap:16px;}
+  .grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  @media (max-width:900px){.grid-3{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:640px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+  /* application card */
+  .app-card{margin-bottom:14px;}
+  .app-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;}
+  .app-name{font-size:17px; font-weight:800;}
+  .app-meta{font-size:13px; color:var(--muted); margin-top:4px;}
+  .badge{font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; padding:4px 11px; border-radius:100px;}
+  .badge.pending{background:#fff3e0; color:#b46c00;}
+  .badge.approved{background:#e6f7ec; color:#1e7d43;}
+  .badge.rejected{background:#fdeeee; color:#a12525;}
+  .app-details{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:16px 0; font-size:13.5px;}
+  @media (max-width:750px){.app-details{grid-template-columns:repeat(2,1fr);}}
+  .app-details .k{color:var(--muted); font-size:11.5px; text-transform:uppercase; letter-spacing:0.04em;}
+  .app-details .v{font-weight:700; margin-top:2px;}
+  .app-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  .notes-input{width:100%; margin-top:10px; padding:10px 12px; border-radius:8px; border:1.5px solid #e2e2e0; font-size:13.5px;}
+
+  /* motorcycle card */
+  .bike-card img{width:100%; height:160px; object-fit:cover; border-radius:10px; margin-bottom:12px; background:#eee;}
+  .bike-card h4{font-size:16px; margin-bottom:4px;}
+  .bike-card .price{color:var(--roam-orange); font-weight:800; font-size:15px; margin-bottom:8px;}
+  .bike-card .status-dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px;}
+  .status-dot.on{background:#1e7d43;} .status-dot.off{background:#bbb;}
+  .bike-actions{display:flex; gap:8px; margin-top:12px;}
+
+  .table-wrap{overflow-x:auto;}
+  table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  th{text-align:left; padding:10px 12px; color:var(--muted); font-size:11.5px; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1.5px solid var(--line);}
+  td{padding:12px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  .role-pill{font-size:11px; font-weight:800; text-transform:uppercase; padding:4px 10px; border-radius:100px;}
+  .role-pill.admin{background:#e6e6ff; color:#4040c0;}
+  .role-pill.user{background:#eee; color:#555;}
+
+  .modal-overlay{display:none; position:fixed; inset:0; z-index:1000; background:rgba(10,10,10,0.7); align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto;}
+  .modal-overlay.open{display:flex;}
+  .modal-box{background:#fff; border-radius:18px; width:100%; max-width:520px; padding:32px; position:relative; margin:auto 0;}
+  .modal-close{position:absolute; top:16px; right:16px; background:none; border:none; font-size:22px; color:#999;}
+  .empty-state{text-align:center; padding:60px 20px; color:var(--muted);}
+  .settings-note{font-size:12.5px; color:var(--muted); margin-top:6px;}
+</style>
+</head>
+<body>
+
+<!-- ============ GATE (login / first-admin setup) ============ -->
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <div class="gate-logo">ROAM CONSOLE</div>
+    <div class="gate-tag" id="gateTag">Sign in to manage financing &amp; applications.</div>
+    <div id="setupBadgeWrap" style="display:none;"><span class="badge-setup">First-time setup</span></div>
+
+    <form id="loginForm">
+      <div class="form-row"><label>Email</label><input type="email" id="loginEmail" required></div>
+      <div class="form-row"><label>Password</label><input type="password" id="loginPassword" required></div>
+      <button class="btn btn-primary" type="submit">Sign In</button>
+      <div class="msg" id="loginMsg"></div>
+    </form>
+
+    <form id="setupForm" style="display:none;">
+      <div class="form-row"><label>Your Name</label><input type="text" id="setupName" required></div>
+      <div class="form-row"><label>Email</label><input type="email" id="setupEmail" required></div>
+      <div class="form-row"><label>Password</label><input type="password" id="setupPassword" minlength="6" required></div>
+      <button class="btn btn-primary" type="submit">Create Admin Account</button>
+      <div class="msg" id="setupMsg"></div>
+    </form>
+
+    <div class="gate-switch" id="gateSwitchWrap" style="display:none;">
+      No admin account yet? <a id="showSetup">Create the first admin account</a>
+    </div>
+  </div>
+</div>
+
+<!-- ============ NOT AUTHORIZED ============ -->
+<div class="gate" id="notAuthorized" style="display:none;">
+  <div class="gate-box" style="text-align:center;">
+    <div class="gate-logo">Access Restricted</div>
+    <p style="color:#666; font-size:14.5px; margin:14px 0 22px;">This account doesn't have admin access to Roam Console.</p>
+    <button class="btn btn-ghost" id="notAuthLogout">Log out</button>
+  </div>
+</div>
+
+<!-- ============ DASHBOARD ============ -->
+<div id="dashboard">
+  <div class="topbar">
+    <div class="brand">ROAM <span>CONSOLE</span></div>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <span class="who" id="whoAmI"></span>
+      <button class="btn btn-ghost" id="logoutBtn">Log out</button>
+    </div>
+  </div>
+  <div class="tabs-bar">
+    <button class="tab-btn active" data-tab="applications">Applications</button>
+    <button class="tab-btn" data-tab="motorcycles">Motorcycles</button>
+    <button class="tab-btn" data-tab="financing">Financing Settings</button>
+    <button class="tab-btn" data-tab="users">Users</button>
+  </div>
+
+  <main>
+    <!-- APPLICATIONS -->
+    <section class="panel active" id="panel-applications">
+      <div class="panel-head">
+        <h2>Financing Applications</h2>
+        <div class="filter-row" id="appFilters">
+          <button class="tab-btn active" data-filter="all">All</button>
+          <button class="tab-btn" data-filter="pending">Pending</button>
+          <button class="tab-btn" data-filter="approved">Approved</button>
+          <button class="tab-btn" data-filter="rejected">Rejected</button>
+        </div>
+      </div>
+      <div id="applicationsList"></div>
+    </section>
+
+    <!-- MOTORCYCLES -->
+    <section class="panel" id="panel-motorcycles">
+      <div class="panel-head">
+        <h2>Motorcycles</h2>
+        <button class="btn btn-primary" style="width:auto;" id="addBikeBtn">+ Add Motorcycle</button>
+      </div>
+      <div class="grid-3" id="bikesList"></div>
+    </section>
+
+    <!-- FINANCING SETTINGS -->
+    <section class="panel" id="panel-financing">
+      <div class="panel-head"><h2>Financing Settings</h2></div>
+      <div class="card" style="max-width:560px;">
+        <div class="form-row">
+          <label>Motorcycle</label>
+          <select id="finBikeSelect"></select>
+        </div>
+        <div class="form-row">
+          <label>Minimum Deposit %</label>
+          <input type="number" id="finMinDeposit" min="0" max="100">
+        </div>
+        <div class="form-row">
+          <label>Deposit Options (% — comma separated)</label>
+          <input type="text" id="finDepositOptions" placeholder="20, 30, 50">
+          <div class="settings-note">These show as quick options for riders on the site calculator.</div>
+        </div>
+        <div class="form-row">
+          <label>Repayment Periods (months — comma separated)</label>
+          <input type="text" id="finTenureOptions" placeholder="6, 12, 18, 24">
+        </div>
+        <div class="form-row">
+          <label>Monthly Interest Rate (flat %)</label>
+          <input type="number" step="0.1" id="finRate">
+          <div class="settings-note">Flat rate applied monthly to the financed balance (industry-standard asset-finance style).</div>
+        </div>
+        <button class="btn btn-primary" id="saveFinancingBtn">Save Settings</button>
+        <div class="msg" id="finMsg"></div>
+      </div>
+    </section>
+
+    <!-- USERS -->
+    <section class="panel" id="panel-users">
+      <div class="panel-head"><h2>Users</h2></div>
+      <div class="card table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Joined</th><th></th></tr></thead>
+          <tbody id="usersTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ============ ADD/EDIT MOTORCYCLE MODAL ============ -->
+<div class="modal-overlay" id="bikeModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('bikeModal')">×</button>
+    <h3 id="bikeModalTitle" style="margin-bottom:18px;">Add Motorcycle</h3>
+    <form id="bikeForm">
+      <input type="hidden" id="bikeId">
+      <div class="form-row"><label>Name</label><input type="text" id="bikeName" required></div>
+      <div class="form-row"><label>Tagline</label><input type="text" id="bikeTagline"></div>
+      <div class="form-row"><label>Description</label><textarea id="bikeDescription" rows="3"></textarea></div>
+      <div class="form-two-col">
+        <div class="form-row"><label>Price (KES)</label><input type="number" id="bikePrice" required></div>
+        <div class="form-row"><label>Sort Order</label><input type="number" id="bikeSortOrder" value="0"></div>
+      </div>
+      <div class="form-row"><label>Image</label><input type="file" id="bikeImageFile" accept="image/*"></div>
+      <div class="form-row" style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="bikeActive" style="width:auto;" checked>
+        <label style="margin:0;">Active (visible on website)</label>
+      </div>
+      <button class="btn btn-primary" type="submit">Save Motorcycle</button>
+      <div class="msg" id="bikeMsg"></div>
+    </form>
+  </div>
+</div>
+
+<script src="roam-config.js"></script>
+<script>
+  let currentProfile = null;
+  let allBikes = [];
+  let allApplications = [];
+  let appFilter = 'all';
+
+  function openModal(id){ document.getElementById(id).classList.add('open'); }
+  function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+  function showMsg(id, text, type){ const el=document.getElementById(id); el.textContent=text; el.className='msg show '+type; }
+
+  // ---------------- GATE LOGIC ----------------
+  async function initGate(){
+    const { data: sessionData } = await roamClient.auth.getSession();
+    if (sessionData && sessionData.session){
+      await tryEnterDashboard();
+      return;
+    }
+    const { data: exists } = await roamClient.rpc('admin_exists');
+    if (!exists){
+      document.getElementById('setupBadgeWrap').style.display='block';
+      document.getElementById('loginForm').style.display='none';
+      document.getElementById('setupForm').style.display='block';
+      document.getElementById('gateTag').textContent = 'No admin account exists yet — create the first one to get started.';
+    } else {
+      document.getElementById('gateSwitchWrap').style.display='none';
+    }
+  }
+
+  document.getElementById('showSetup').addEventListener('click', ()=>{
+    document.getElementById('loginForm').style.display='none';
+    document.getElementById('setupForm').style.display='block';
+    document.getElementById('gateSwitchWrap').style.display='none';
+  });
+
+  document.getElementById('setupForm').addEventListener('submit', async(e)=>{
+    e.preventDefault();
+    const name = document.getElementById('setupName').value.trim();
+    const email = document.getElementById('setupEmail').value.trim();
+    const password = document.getElementById('setupPassword').value;
+    const { data, error } = await roamClient.auth.signUp({ email, password, options:{ data:{ full_name:name } } });
+    if (error){ showMsg('setupMsg', error.message, 'error'); return; }
+    if (!data.session){
+      showMsg('setupMsg', 'Account created. If email confirmation is required, confirm it then log in.', 'success');
+      return;
+    }
+    await tryEnterDashboard();
+  });
+
+  document.getElementById('loginForm').addEventListener('submit', async(e)=>{
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const { data, error } = await roamClient.auth.signInWithPassword({ email, password });
+    if (error){ showMsg('loginMsg', error.message, 'error'); return; }
+    await tryEnterDashboard();
+  });
+
+  async function tryEnterDashboard(){
+    const { data: userData } = await roamClient.auth.getUser();
+    if (!userData || !userData.user){ return; }
+    const { data: profile, error } = await roamClient.from('profiles').select('*').eq('id', userData.user.id).single();
+    if (error || !profile || profile.role !== 'admin'){
+      document.getElementById('gate').style.display='none';
+      document.getElementById('notAuthorized').style.display='flex';
+      return;
+    }
+    currentProfile = profile;
+    document.getElementById('gate').style.display='none';
+    document.getElementById('notAuthorized').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    document.getElementById('whoAmI').textContent = 'Signed in as ' + (profile.full_name || profile.email);
+    await loadEverything();
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+    await roamClient.auth.signOut();
+    location.reload();
+  });
+  document.getElementById('notAuthLogout').addEventListener('click', async ()=>{
+    await roamClient.auth.signOut();
+    location.reload();
+  });
+
+  // ---------------- TABS ----------------
+  document.querySelectorAll('.tabs-bar .tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tabs-bar .tab-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    });
+  });
+  document.getElementById('appFilters').addEventListener('click', (e)=>{
+    if (!e.target.dataset.filter) return;
+    appFilter = e.target.dataset.filter;
+    document.querySelectorAll('#appFilters .tab-btn').forEach(b=>b.classList.remove('active'));
+    e.target.classList.add('active');
+    renderApplications();
+  });
+
+  // ---------------- LOAD DATA ----------------
+  async function loadEverything(){
+    await Promise.all([loadBikes(), loadApplications(), loadUsers()]);
+    populateFinancingBikeSelect();
+  }
+
+  async function loadBikes(){
+    const { data } = await roamClient.from('motorcycles').select('*').order('sort_order');
+    allBikes = data || [];
+    renderBikes();
+  }
+  function renderBikes(){
+    const wrap = document.getElementById('bikesList');
+    if (!allBikes.length){ wrap.innerHTML = '<div class="empty-state">No motorcycles yet. Add your first one.</div>'; return; }
+    wrap.innerHTML = allBikes.map(b=>`
+      <div class="card bike-card">
+        <img src="${b.image_url || ''}" onerror="this.style.opacity=0">
+        <h4>${b.name}</h4>
+        <div class="price">KES ${Number(b.price).toLocaleString()}</div>
+        <div style="font-size:13px; color:var(--muted);"><span class="status-dot ${b.active?'on':'off'}"></span>${b.active?'Active':'Hidden'}</div>
+        <div class="bike-actions">
+          <button class="btn btn-ghost btn-small" onclick="editBike('${b.id}')">Edit</button>
+          <button class="btn btn-danger btn-small" onclick="deleteBike('${b.id}')">Delete</button>
+        </div>
+      </div>`).join('');
+  }
+
+  document.getElementById('addBikeBtn').addEventListener('click', ()=>{
+    document.getElementById('bikeForm').reset();
+    document.getElementById('bikeId').value = '';
+    document.getElementById('bikeModalTitle').textContent = 'Add Motorcycle';
+    document.getElementById('bikeMsg').className = 'msg';
+    openModal('bikeModal');
+  });
+  window.editBike = function(id){
+    const b = allBikes.find(x=>x.id===id);
+    if (!b) return;
+    document.getElementById('bikeId').value = b.id;
+    document.getElementById('bikeName').value = b.name;
+    document.getElementById('bikeTagline').value = b.tagline || '';
+    document.getElementById('bikeDescription').value = b.description || '';
+    document.getElementById('bikePrice').value = b.price;
+    document.getElementById('bikeSortOrder').value = b.sort_order || 0;
+    document.getElementById('bikeActive').checked = b.active;
+    document.getElementById('bikeModalTitle').textContent = 'Edit Motorcycle';
+    document.getElementById('bikeMsg').className = 'msg';
+    openModal('bikeModal');
+  };
+  window.deleteBike = async function(id){
+    if (!confirm('Delete this motorcycle? This cannot be undone.')) return;
+    const { error } = await roamClient.from('motorcycles').delete().eq('id', id);
+    if (error){ alert(error.message); return; }
+    await loadBikes();
+    populateFinancingBikeSelect();
+  };
+
+  document.getElementById('bikeForm').addEventListener('submit', async(e)=>{
+    e.preventDefault();
+    const id = document.getElementById('bikeId').value;
+    const payload = {
+      name: document.getElementById('bikeName').value.trim(),
+      tagline: document.getElementById('bikeTagline').value.trim(),
+      description: document.getElementById('bikeDescription').value.trim(),
+      price: Number(document.getElementById('bikePrice').value),
+      sort_order: Number(document.getElementById('bikeSortOrder').value) || 0,
+      active: document.getElementById('bikeActive').checked
+    };
+    const file = document.getElementById('bikeImageFile').files[0];
+    try{
+      if (file){
+        const path = `${Date.now()}-${file.name.replace(/\s+/g,'_')}`;
+        const { error: upErr } = await roamClient.storage.from('motorcycle-images').upload(path, file);
+        if (upErr) throw upErr;
+        const { data: pub } = roamClient.storage.from('motorcycle-images').getPublicUrl(path);
+        payload.image_url = pub.publicUrl;
+      }
+      let error;
+      if (id){
+        ({ error } = await roamClient.from('motorcycles').update(payload).eq('id', id));
+      } else {
+        ({ error } = await roamClient.from('motorcycles').insert(payload));
+      }
+      if (error) throw error;
+      showMsg('bikeMsg', 'Saved!', 'success');
+      await loadBikes();
+      populateFinancingBikeSelect();
+      setTimeout(()=>closeModal('bikeModal'), 900);
+    } catch(err){
+      showMsg('bikeMsg', err.message, 'error');
+    }
+  });
+
+  async function loadApplications(){
+    const { data } = await roamClient.from('financing_applications').select('*').order('created_at', { ascending:false });
+    allApplications = data || [];
+    renderApplications();
+  }
+  function renderApplications(){
+    const wrap = document.getElementById('applicationsList');
+    const list = appFilter==='all' ? allApplications : allApplications.filter(a=>a.status===appFilter);
+    if (!list.length){ wrap.innerHTML = '<div class="empty-state">No applications here yet.</div>'; return; }
+    wrap.innerHTML = list.map(app=>{
+      const bike = allBikes.find(b=>b.id===app.motorcycle_id);
+      return `<div class="card app-card">
+        <div class="app-top">
+          <div>
+            <div class="app-name">${app.full_name}</div>
+            <div class="app-meta">${app.email} · ${app.phone} ${app.location ? '· '+app.location : ''}</div>
+          </div>
+          <span class="badge ${app.status}">${app.status}</span>
+        </div>
+        <div class="app-details">
+          <div><div class="k">Motorcycle</div><div class="v">${bike ? bike.name : '—'}</div></div>
+          <div><div class="k">Deposit</div><div class="v">KES ${Number(app.deposit_amount).toLocaleString()} (${app.deposit_percent}%)</div></div>
+          <div><div class="k">Tenure</div><div class="v">${app.tenure_months} months</div></div>
+          <div><div class="k">Installment</div><div class="v">KES ${Number(app.monthly_installment).toLocaleString()}/mo</div></div>
+        </div>
+        <input type="text" class="notes-input" placeholder="Admin notes (visible to applicant)" value="${app.admin_notes ? app.admin_notes.replace(/"/g,'&quot;') : ''}" onchange="updateNotes('${app.id}', this.value)">
+        <div class="app-actions">
+          <button class="btn btn-ghost btn-small" onclick="setStatus('${app.id}','approved')">Approve</button>
+          <button class="btn btn-ghost btn-small" onclick="setStatus('${app.id}','pending')">Mark Pending</button>
+          <button class="btn btn-ghost btn-small" onclick="setStatus('${app.id}','rejected')">Reject</button>
+          <button class="btn btn-danger btn-small" onclick="deleteApplication('${app.id}')">Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  window.setStatus = async function(id, status){
+    const { error } = await roamClient.from('financing_applications').update({ status, updated_at:new Date().toISOString() }).eq('id', id);
+    if (error){ alert(error.message); return; }
+    await loadApplications();
+  };
+  window.updateNotes = async function(id, notes){
+    const { error } = await roamClient.from('financing_applications').update({ admin_notes: notes, updated_at:new Date().toISOString() }).eq('id', id);
+    if (error) alert(error.message);
+  };
+  window.deleteApplication = async function(id){
+    if (!confirm('Delete this application permanently?')) return;
+    const { error } = await roamClient.from('financing_applications').delete().eq('id', id);
+    if (error){ alert(error.message); return; }
+    await loadApplications();
+  };
+
+  // ---------------- FINANCING SETTINGS ----------------
+  function populateFinancingBikeSelect(){
+    const sel = document.getElementById('finBikeSelect');
+    sel.innerHTML = allBikes.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+    if (allBikes.length) loadFinancingForBike(allBikes[0].id);
+  }
+  document.getElementById('finBikeSelect').addEventListener('change', e=>loadFinancingForBike(e.target.value));
+
+  async function loadFinancingForBike(bikeId){
+    const { data } = await roamClient.from('financing_settings').select('*').eq('motorcycle_id', bikeId).maybeSingle();
+    document.getElementById('finMinDeposit').value = data ? data.min_deposit_percent : 20;
+    document.getElementById('finDepositOptions').value = data ? data.deposit_options.join(', ') : '20, 30, 50';
+    document.getElementById('finTenureOptions').value = data ? data.tenure_months_options.join(', ') : '6, 12, 18, 24';
+    document.getElementById('finRate').value = data ? data.monthly_interest_rate : 4;
+  }
+
+  document.getElementById('saveFinancingBtn').addEventListener('click', async ()=>{
+    const bikeId = document.getElementById('finBikeSelect').value;
+    if (!bikeId){ showMsg('finMsg','Add a motorcycle first.','error'); return; }
+    const payload = {
+      motorcycle_id: bikeId,
+      min_deposit_percent: Number(document.getElementById('finMinDeposit').value),
+      deposit_options: document.getElementById('finDepositOptions').value.split(',').map(s=>Number(s.trim())).filter(n=>!isNaN(n)),
+      tenure_months_options: document.getElementById('finTenureOptions').value.split(',').map(s=>Number(s.trim())).filter(n=>!isNaN(n)),
+      monthly_interest_rate: Number(document.getElementById('finRate').value)
+    };
+    const { error } = await roamClient.from('financing_settings').upsert(payload, { onConflict:'motorcycle_id' });
+    if (error){ showMsg('finMsg', error.message, 'error'); return; }
+    showMsg('finMsg', 'Financing settings saved!', 'success');
+  });
+
+  // ---------------- USERS ----------------
+  async function loadUsers(){
+    const { data } = await roamClient.from('profiles').select('*').order('created_at', { ascending:false });
+    const tbody = document.getElementById('usersTableBody');
+    tbody.innerHTML = (data||[]).map(u=>`
+      <tr>
+        <td>${u.full_name || '—'}</td>
+        <td>${u.email}</td>
+        <td>${u.phone || '—'}</td>
+        <td><span class="role-pill ${u.role}">${u.role}</span></td>
+        <td>${new Date(u.created_at).toLocaleDateString()}</td>
+        <td>
+          ${u.role === 'admin'
+            ? `<button class="btn btn-ghost btn-small" onclick="toggleRole('${u.id}','user')">Demote</button>`
+            : `<button class="btn btn-ghost btn-small" onclick="toggleRole('${u.id}','admin')">Promote</button>`}
+        </td>
+      </tr>`).join('');
+  }
+  window.toggleRole = async function(id, role){
+    if (currentProfile && id === currentProfile.id && role==='user'){
+      if (!confirm('This will remove your own admin access. Continue?')) return;
+    }
+    const { error } = await roamClient.from('profiles').update({ role }).eq('id', id);
+    if (error){ alert(error.message); return; }
+    await loadUsers();
+  };
+
+  initGate();
+</script>
+</body>
+</html>
