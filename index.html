@@ -6,8 +6,8 @@
 <title>Roam Electric — Standard of Electric Mobility in Africa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root{
     --roam-orange:#FF6A1A;
@@ -770,12 +770,12 @@
   </div>
 </div>
 
-<script src="roam-config.js"></script>
 <script>
   function scrollQuotes(dir){
     const track = document.getElementById('quoteTrack');
     track.scrollBy({left: dir * 360, behavior: 'smooth'});
   }
+  window.scrollQuotes = scrollQuotes;
   document.querySelectorAll('.tab').forEach(tab=>{
     tab.addEventListener('click', ()=>{
       document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -790,7 +790,9 @@
   });
 </script>
 
-<script>
+<script type="module">
+  import { roamClient, calcFinancing, formatKES } from '/roam-config.js';
+
   // ======================================================
   // ROAM FINANCING — calculator, auth, application logic
   // ======================================================
@@ -801,10 +803,13 @@
 
   function openModal(id){ document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
   function closeModal(id){ document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+  window.openModal = openModal;
+  window.closeModal = closeModal;
   document.querySelectorAll('.modal-overlay').forEach(ov=>{
     ov.addEventListener('click', e=>{ if(e.target === ov) closeModal(ov.id); });
   });
   function switchToApply(){ closeModal('loginModal'); openApplyModal(); }
+  window.switchToApply = switchToApply;
   function showMsg(id, text, type){
     const el = document.getElementById(id);
     el.textContent = text; el.className = 'modal-msg show ' + type;
@@ -889,6 +894,7 @@
     updateApplySummary();
     openModal('applyModal');
   }
+  window.openApplyModal = openApplyModal;
   function updateApplySummary(){
     const bikeId = document.getElementById('applyBikeSelect').value;
     const bike = bikes.find(b=>b.id === bikeId);

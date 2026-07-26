@@ -2,19 +2,20 @@
 // Roam Electric — shared Supabase config & helpers
 // Used by index.html (public site) and bigadmin.html (admin panel)
 // ============================================================
-const SUPABASE_URL = "https://aszknmdqekqixdjacwot.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzemtubWRxZWtxaXhkamFjd290Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwMDUyNjAsImV4cCI6MjEwMDU4MTI2MH0.DMqsbtEMXFITnTu_FhTFgs1NuOhmKGgs_6OJcIk_9z8";
+import { createClient } from '@supabase/supabase-js';
 
-const roamClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+const SUPABASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_URL)
+  || "https://aszknmdqekqixdjacwot.supabase.co";
+
+const SUPABASE_ANON_KEY = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_ANON_KEY)
+  || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzemtubWRxZWtxaXhkamFjd290Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwMDUyNjAsImV4cCI6MjEwMDU4MTI2MH0.DMqsbtEMXFITnTu_FhTFgs1NuOhmKGgs_6OJcIk_9z8";
+
+export const roamClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true }
 });
 
 // ---- Flat-rate financing calculator (shared by hero calculator + admin + application form) ----
-// principal: full cash price of the bike
-// depositPercent: % paid upfront
-// tenureMonths: repayment period
-// monthlyRatePercent: flat monthly interest rate set by admin
-function calcFinancing(principal, depositPercent, tenureMonths, monthlyRatePercent) {
+export function calcFinancing(principal, depositPercent, tenureMonths, monthlyRatePercent) {
   const deposit = principal * (depositPercent / 100);
   const balance = principal - deposit;
   const totalInterest = balance * (monthlyRatePercent / 100) * tenureMonths;
@@ -29,6 +30,13 @@ function calcFinancing(principal, depositPercent, tenureMonths, monthlyRatePerce
   };
 }
 
-function formatKES(n) {
+export function formatKES(n) {
   return "KES " + Math.round(n).toLocaleString("en-KE");
+}
+
+// Global window attachments for backwards compatibility
+if (typeof window !== 'undefined') {
+  window.roamClient = roamClient;
+  window.calcFinancing = calcFinancing;
+  window.formatKES = formatKES;
 }
