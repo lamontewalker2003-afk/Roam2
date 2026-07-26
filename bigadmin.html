@@ -844,9 +844,29 @@
           </div>
 
           <div class="app-actions-bar">
-            <input type="text" class="notes-box" placeholder="Add admin note..." 
-              value="${app.admin_notes ? app.admin_notes.replace(/"/g, '&quot;') : ''}" 
-              onchange="updateNotes('${app.id}', this.value)">
+            <div style="flex:1; min-width:260px; display:flex; flex-direction:column; gap:10px;">
+              <input type="text" class="notes-box" placeholder="Add admin note..." 
+                value="${app.admin_notes ? app.admin_notes.replace(/"/g, '&quot;') : ''}" 
+                onchange="updateNotes('${app.id}', this.value)">
+              <div style="display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px;">
+                <select class="notes-box" id="paymentMethod_${app.id}" onchange="setPaymentMethod('${app.id}', this.value)">
+                  <option value="">Payment method</option>
+                  <option value="till" ${app.payment_method === 'till' ? 'selected' : ''}>Till</option>
+                  <option value="paybill" ${app.payment_method === 'paybill' ? 'selected' : ''}>Paybill</option>
+                  <option value="bank" ${app.payment_method === 'bank' ? 'selected' : ''}>Bank Account</option>
+                </select>
+                <div></div>
+                <input type="text" class="notes-box" id="paymentTill_${app.id}" placeholder="Till number" value="${app.payment_till_number ? app.payment_till_number.replace(/"/g, '&quot;') : ''}" ${app.payment_method === 'till' ? '' : 'disabled'}>
+                <input type="text" class="notes-box" id="paymentPaybill_${app.id}" placeholder="Paybill number" value="${app.payment_paybill_number ? app.payment_paybill_number.replace(/"/g, '&quot;') : ''}">
+                <input type="text" class="notes-box" id="paymentAccount_${app.id}" placeholder="Account number" value="${app.payment_account_number ? app.payment_account_number.replace(/"/g, '&quot;') : ''}">
+                <button class="btn-sm" onclick="savePaymentDetails('${app.id}')">💾 Save Payment Info</button>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn-sm" onclick="setPaymentStatus('${app.id}', 'deposit_paid')">💰 Confirm Deposit</button>
+                <button class="btn-sm" onclick="setPaymentStatus('${app.id}', 'full_paid')">✅ Confirm Full Payment</button>
+                <button class="btn-sm" onclick="setPaymentStatus('${app.id}', 'pending')">↺ Reset</button>
+              </div>
+            </div>
 
             <div class="action-btn-group">
               <button class="btn-sm" onclick="setStatus('${app.id}', 'approved')">✓ Approve</button>
@@ -874,6 +894,45 @@
   window.setStatus = async function(id, status) {
     const { error } = await roamClient.from('financing_applications')
       .update({ status, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) { alert(error.message); return; }
+    await loadApplications();
+    updateKpis();
+  };
+
+  window.setPaymentMethod = async function(id, method) {
+    const payload = { payment_method: method, updated_at: new Date().toISOString() };
+    const { error } = await roamClient.from('financing_applications').update(payload).eq('id', id);
+    if (error) { alert(error.message); return; }
+    await loadApplications();
+  };
+
+  window.savePaymentDetails = async function(id) {
+    const till = document.getElementById(`paymentTill_${id}`)?.value || '';
+    const paybill = document.getElementById(`paymentPaybill_${id}`)?.value || '';
+    const account = document.getElementById(`paymentAccount_${id}`)?.value || '';
+    const method = document.getElementById(`paymentMethod_${id}`)?.value || '';
+
+    const payload = {
+      payment_method: method,
+      payment_till_number: till,
+      payment_paybill_number: paybill,
+      payment_account_number: account,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await roamClient.from('financing_applications').update(payload).eq('id', id);
+    if (error) { alert(error.message); return; }
+    alert('Payment information saved.');
+  };
+
+  window.setPaymentStatus = async function(id, mode) {
+    const payload = {
+      payment_status: mode === 'pending' ? 'pending' : mode === 'deposit_paid' ? 'deposit_paid' : 'full_paid',
+      deposit_paid: mode === 'deposit_paid' || mode === 'full_paid',
+      full_payment_confirmed: mode === 'full_paid',
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await roamClient.from('financing_applications').update(payload).eq('id', id);
     if (error) { alert(error.message); return; }
     await loadApplications();
     updateKpis();

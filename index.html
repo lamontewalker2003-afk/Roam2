@@ -432,7 +432,7 @@
       <a href="#">Resources ▾</a>
     </div>
     <div class="nav-cta">
-      <a href="#" class="btn btn-outline">Book Test Ride</a>
+      <a href="#tracker" class="btn btn-outline" onclick="document.getElementById('tracker').scrollIntoView({behavior:'smooth', block:'start'}); return false;">Track Application</a>
       <a href="#" class="btn btn-solid">Contact Roam</a>
     </div>
     <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
@@ -945,10 +945,6 @@
         query = query.ilike('email', `%${normalizedEmail}%`);
       }
 
-      if (normalizedId) {
-        query = query.eq('id', normalizedId);
-      }
-
       const response = await query;
       data = response.data || [];
       error = response.error;
@@ -962,32 +958,71 @@
       return;
     }
 
-    if (!data || !data.length) {
-      trackResult.innerHTML = '<div class="track-empty">No applications matched that ID and email. Please double-check the details and try again.</div>';
+    let filtered = data;
+    if (normalizedId) {
+      filtered = data.filter(app => {
+        const idValue = String(app.id || '').toLowerCase();
+        const altValue = String(app.application_id || app.reference_id || '').toLowerCase();
+        return idValue === normalizedId.toLowerCase() || altValue === normalizedId.toLowerCase();
+      });
+    }
+
+    if (!filtered || !filtered.length) {
+      if (normalizedId && data.length) {
+        trackResult.innerHTML = '<div class="track-empty">The application ID did not match any record, but here are the applications found for this email.</div>';
+      } else {
+        trackResult.innerHTML = '<div class="track-empty">No applications matched that email. Please double-check the details and try again.</div>';
+      }
+      const rows = data.map(app => renderTrackApp(app)).join('');
+      trackResult.innerHTML += rows;
       return;
     }
 
-    const rows = data.map(app => {
-      const bike = bikes.find(b => b.id === app.motorcycle_id);
-      const statusClass = `status-${app.status || 'pending'}`;
-      const statusLabel = (app.status || 'pending').charAt(0).toUpperCase() + (app.status || 'pending').slice(1);
-      return `
-        <div style="border-top:1px solid #eee; padding-top:12px; margin-top:12px;">
-          <span class="badge ${statusClass}">${statusLabel}</span>
-          <div style="font-weight:800; font-size:16px; margin-top:8px;">${bike ? bike.name : 'Motorcycle Application'}</div>
-          <div class="meta">
-            <div><strong>Applicant:</strong> ${app.full_name || '—'}</div>
-            <div><strong>Application ID:</strong> ${app.id}</div>
-            <div><strong>Deposit:</strong> ${formatKES(app.deposit_amount || 0)} (${app.deposit_percent || 0}%)</div>
-            <div><strong>Tenure:</strong> ${app.tenure_months || 0} months</div>
-            <div><strong>Monthly Installment:</strong> ${formatKES(app.monthly_installment || 0)}/mo</div>
-            <div><strong>Submitted:</strong> ${new Date(app.created_at).toLocaleDateString()}</div>
-          </div>
-        </div>
-      `;
-    }).join('');
+    const rows = filtered.map(app => renderTrackApp(app)).join('');
+    trackResult.innerHTML = `<div style="font-weight:800; font-size:17px; margin-bottom:6px;">Found ${filtered.length} application${filtered.length > 1 ? 's' : ''}</div>${rows}`;
+  }
 
-    trackResult.innerHTML = `<div style="font-weight:800; font-size:17px; margin-bottom:6px;">Found ${data.length} application${data.length > 1 ? 's' : ''}</div>${rows}`;
+  function renderTrackApp(app){
+    const bike = bikes.find(b => b.id === app.motorcycle_id);
+    const status = (app.status || 'pending').toLowerCase();
+    const isApproved = status === 'approved';
+    const statusClass = `status-${status}`;
+    const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+    const paymentStatus = app.payment_status || 'pending';
+    const paymentDisplay = paymentStatus === 'full_paid'
+      ? 'Full payment confirmed'
+      : paymentStatus === 'deposit_paid'
+        ? 'Deposit payment confirmed'
+        : 'Payment pending';
+    const paymentDetails = [];
+    if (app.payment_method === 'till' && app.payment_till_number) {
+      paymentDetails.push(`Till number: ${app.payment_till_number}`);
+    } else if (app.payment_method === 'paybill') {
+      if (app.payment_paybill_number) paymentDetails.push(`Paybill: ${app.payment_paybill_number}`);
+      if (app.payment_account_number) paymentDetails.push(`Account number: ${app.payment_account_number}`);
+    } else if (app.payment_method === 'bank') {
+      if (app.payment_account_number) paymentDetails.push(`Account number: ${app.payment_account_number}`);
+      if (app.payment_paybill_number) paymentDetails.push(`Paybill: ${app.payment_paybill_number}`);
+    }
+    if (app.payment_method && !paymentDetails.length) paymentDetails.push(`Payment method: ${app.payment_method}`);
+
+    return `
+      <div style="border-top:1px solid #eee; padding-top:12px; margin-top:12px;">
+        <span class="badge ${statusClass}">${isApproved ? 'Approved' : statusLabel}</span>
+        <div style="font-weight:800; font-size:16px; margin-top:8px;">${bike ? bike.name : 'Motorcycle Application'}</div>
+        <div class="meta">
+          <div><strong>Applicant:</strong> ${app.full_name || '—'}</div>
+          <div><strong>Application ID:</strong> ${app.id}</div>
+          <div><strong>Deposit:</strong> ${formatKES(app.deposit_amount || 0)} (${app.deposit_percent || 0}%)</div>
+          <div><strong>Tenure:</strong> ${app.tenure_months || 0} months</div>
+          <div><strong>Monthly Installment:</strong> ${formatKES(app.monthly_installment || 0)}/mo</div>
+          <div><strong>Submitted:</strong> ${new Date(app.created_at).toLocaleDateString()}</div>
+          ${isApproved ? `<div><strong>Payment status:</strong> ${paymentDisplay}</div>` : ''}
+          ${paymentDetails.length ? `<div><strong>Payment info:</strong> ${paymentDetails.join(' • ')}</div>` : ''}
+          ${app.admin_notes ? `<div><strong>Payment note:</strong> ${app.admin_notes}</div>` : ''}
+        </div>
+      </div>
+    `;
   }
 
   document.getElementById('trackLoanForm').addEventListener('submit', async (e) => {
