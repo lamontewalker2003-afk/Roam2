@@ -930,56 +930,51 @@
     const trackResult = document.getElementById('trackResult');
     if (!trackResult) return;
 
-    trackResult.innerHTML = '<div class="track-empty">Searching your application…</div>';
+    trackResult.innerHTML = '<div class="track-empty">Searching your applications…</div>';
 
     const normalizedId = applicationId.trim();
     const normalizedEmail = email.trim().toLowerCase();
 
-    let { data, error } = await roamClient
-      .from('financing_applications')
-      .select('*')
-      .eq('id', normalizedId)
-      .maybeSingle();
+    let query = roamClient.from('financing_applications').select('*').ilike('email', `%${normalizedEmail}%`).order('created_at', { ascending: false });
+
+    if (normalizedId) {
+      query = query.eq('id', normalizedId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Track lookup error:', error);
-      trackResult.innerHTML = '<div class="track-empty">We could not load that application right now. Please try again in a moment.</div>';
+      trackResult.innerHTML = '<div class="track-empty">We could not load your applications right now. Please try again in a moment.</div>';
       return;
     }
 
-    if (!data) {
-      const { data: fallbackData, error: fallbackError } = await roamClient
-        .from('financing_applications')
-        .select('*')
-        .ilike('email', `%${normalizedEmail}%`)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (fallbackError || !fallbackData || !fallbackData.length) {
-        trackResult.innerHTML = '<div class="track-empty">No application matched that ID and email. Please double-check the details and try again.</div>';
-        return;
-      }
-
-      data = fallbackData[0];
-    } else if (data.email && normalizedEmail && data.email.toLowerCase() !== normalizedEmail) {
-      trackResult.innerHTML = '<div class="track-empty">The application ID matched, but the email did not. Please verify the email you used when submitting.</div>';
+    if (!data || !data.length) {
+      trackResult.innerHTML = '<div class="track-empty">No applications matched that ID and email. Please double-check the details and try again.</div>';
       return;
     }
 
-    const bike = bikes.find(b => b.id === data.motorcycle_id);
-    const statusClass = `status-${data.status || 'pending'}`;
-    trackResult.innerHTML = `
-      <span class="badge ${statusClass}">${(data.status || 'pending').toUpperCase()}</span>
-      <div style="font-weight:800; font-size:18px;">${bike ? bike.name : 'Motorcycle Application'}</div>
-      <div class="meta">
-        <div><strong>Applicant:</strong> ${data.full_name || '—'}</div>
-        <div><strong>Application ID:</strong> ${data.id}</div>
-        <div><strong>Deposit:</strong> ${formatKES(data.deposit_amount || 0)} (${data.deposit_percent || 0}%)</div>
-        <div><strong>Tenure:</strong> ${data.tenure_months || 0} months</div>
-        <div><strong>Monthly Installment:</strong> ${formatKES(data.monthly_installment || 0)}/mo</div>
-        <div><strong>Submitted:</strong> ${new Date(data.created_at).toLocaleDateString()}</div>
-      </div>
-    `;
+    const rows = data.map(app => {
+      const bike = bikes.find(b => b.id === app.motorcycle_id);
+      const statusClass = `status-${app.status || 'pending'}`;
+      const statusLabel = (app.status || 'pending').charAt(0).toUpperCase() + (app.status || 'pending').slice(1);
+      return `
+        <div style="border-top:1px solid #eee; padding-top:12px; margin-top:12px;">
+          <span class="badge ${statusClass}">${statusLabel}</span>
+          <div style="font-weight:800; font-size:16px; margin-top:8px;">${bike ? bike.name : 'Motorcycle Application'}</div>
+          <div class="meta">
+            <div><strong>Applicant:</strong> ${app.full_name || '—'}</div>
+            <div><strong>Application ID:</strong> ${app.id}</div>
+            <div><strong>Deposit:</strong> ${formatKES(app.deposit_amount || 0)} (${app.deposit_percent || 0}%)</div>
+            <div><strong>Tenure:</strong> ${app.tenure_months || 0} months</div>
+            <div><strong>Monthly Installment:</strong> ${formatKES(app.monthly_installment || 0)}/mo</div>
+            <div><strong>Submitted:</strong> ${new Date(app.created_at).toLocaleDateString()}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    trackResult.innerHTML = `<div style="font-weight:800; font-size:17px; margin-bottom:6px;">Found ${data.length} application${data.length > 1 ? 's' : ''}</div>${rows}`;
   }
 
   document.getElementById('trackLoanForm').addEventListener('submit', async (e) => {
