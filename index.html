@@ -57,6 +57,7 @@
   .nav-links a{font-size:14.5px; font-weight:600; color:#222; display:flex; align-items:center; gap:6px;}
   .nav-links a:hover{color:var(--roam-orange);}
   .nav-cta{display:flex; align-items:center; gap:12px;}
+  .nav-cta .btn{min-width:0;}
   .btn{
     font-size:13.5px; font-weight:700; padding:11px 20px; border-radius:100px;
     display:inline-block; white-space:nowrap; transition:all .2s ease;
@@ -72,6 +73,15 @@
   @media (max-width:900px){
     .nav-links{display:none;}
     .menu-toggle{display:flex;}
+    nav{padding:14px 20px;}
+    .nav-cta{gap:8px;}
+    .nav-cta .btn{padding:9px 14px; font-size:12.5px;}
+  }
+  @media (max-width:560px){
+    nav{align-items:flex-start; gap:12px;}
+    .logo{font-size:20px;}
+    .nav-cta{flex-wrap:wrap; justify-content:flex-end;}
+    .nav-cta .btn{width:100%; text-align:center;}
   }
 
   /* ---------- HERO ---------- */
@@ -104,13 +114,17 @@
     background:rgba(0,0,0,0.55); backdrop-filter:blur(6px);
     border:1px solid rgba(255,255,255,0.3);
     padding:12px 20px; border-radius:100px; font-weight:700; font-size:15px;
+    max-width:min(100%, 360px);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
   .hero-whatsapp .wa-icon{
     width:22px; height:22px; border-radius:50%; background:#25D366;
     display:flex; align-items:center; justify-content:center; font-size:13px;
   }
   @media (max-width:768px){
-    .hero-whatsapp{ position:static; margin-top:24px; width:fit-content; }
+    .hero-whatsapp{ position:static; margin-top:24px; width:fit-content; max-width:100%; white-space:normal; }
   }
 
   /* ---------- SPLIT PROMO (Roam Air / Charging) ---------- */
@@ -227,6 +241,7 @@
   .newsletter-grid{display:flex; align-items:center; justify-content:space-between; gap:32px; flex-wrap:wrap;}
   .newsletter h4{font-size:26px; max-width:420px;}
   .news-form{display:flex; gap:10px; flex:1; min-width:280px; max-width:480px;}
+  @media (max-width:560px){.news-form{flex-direction:column; min-width:0;}}
   .news-form input{
     flex:1; padding:14px 18px; border-radius:100px; border:1px solid #3a3a3d;
     background:var(--ink-soft); color:#fff; font-size:14.5px;
@@ -245,8 +260,7 @@
   }
   .btn-finance:hover{background:var(--roam-orange); border-color:var(--roam-orange); color:#fff;}
   .btn-finance svg{width:16px; height:16px;}
-  .nav-login{font-size:13.5px !important; font-weight:700 !important; color:#222 !important; border:1.5px solid #ddd; padding:9px 16px; border-radius:100px;}
-  .nav-login:hover{border-color:var(--roam-orange); color:var(--roam-orange) !important;}
+  .nav-login{display:none;}
   .user-chip{display:flex; align-items:center; gap:10px; font-size:13.5px; font-weight:700;}
   .user-chip button{background:none; border:none; font:inherit; color:var(--roam-orange); cursor:pointer; text-decoration:underline;}
 
@@ -401,7 +415,6 @@
     <div class="nav-cta">
       <a href="#" class="btn btn-outline">Book Test Ride</a>
       <a href="#" class="btn btn-solid">Contact Roam</a>
-      <div id="authArea"><a href="#" class="nav-login" id="loginNavBtn">Login</a></div>
     </div>
     <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
   </nav>
@@ -422,8 +435,8 @@
       <a href="#calculator" class="btn btn-outline" style="border-color:rgba(255,255,255,0.6); color:#fff;">See Repayment Calculator</a>
     </div>
   </div>
-  <a class="hero-whatsapp" href="https://wa.me/254740666555" target="_blank">
-    <span class="wa-icon">☎</span> +254 740 666 555
+  <a class="hero-whatsapp" id="heroWhatsAppLink" href="#" target="_blank">
+    <span class="wa-icon">☎</span> <span id="heroWhatsAppLabel">+254 740 666 555</span>
   </a>
 </section>
 
@@ -676,9 +689,9 @@
         </div>
       </div>
       <div>
-        <p style="font-size:14px; color:#9a9a9e; max-width:280px;">Reach out to discover how Roam is transforming electric mobility.</p>
-        <p style="margin-top:10px; font-size:14px;"><a href="mailto:info@roam-electric.com">info@roam-electric.com</a></p>
-        <p style="margin-top:4px; font-size:14px;"><a href="tel:+254740666555">+254 740 666 555</a></p>
+        <p id="footerMessage" style="font-size:14px; color:#9a9a9e; max-width:280px;">Reach out to discover how Roam is transforming electric mobility.</p>
+        <p style="margin-top:10px; font-size:14px;"><a id="footerEmailLink" href="mailto:info@roam-electric.com">info@roam-electric.com</a></p>
+        <p style="margin-top:4px; font-size:14px;"><a id="footerPhoneLink" href="tel:+254740666555">+254 740 666 555</a></p>
       </div>
     </div>
     <div class="footer-bottom">
@@ -800,6 +813,7 @@
   let settingsByBike = {};
   let currentUser = null;
   let calcState = { bikeId: null, deposit: 20, tenure: 12 };
+  let siteSettings = null;
 
   function openModal(id){ document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
   function closeModal(id){ document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
@@ -815,7 +829,37 @@
     el.textContent = text; el.className = 'modal-msg show ' + type;
   }
 
+  async function loadSiteSettings(){
+    const { data, error } = await roamClient.from('site_settings').select('*').order('updated_at', { ascending: false }).limit(1);
+    if (!error && data && data.length) {
+      siteSettings = data[0];
+      applySiteSettings(siteSettings);
+    }
+  }
+
+  function applySiteSettings(settings){
+    if (!settings) return;
+    const heroLabel = document.getElementById('heroWhatsAppLabel');
+    const heroLink = document.getElementById('heroWhatsAppLink');
+    const footerMessage = document.getElementById('footerMessage');
+    const footerEmailLink = document.getElementById('footerEmailLink');
+    const footerPhoneLink = document.getElementById('footerPhoneLink');
+
+    if (heroLabel) heroLabel.textContent = settings.whatsapp_label || '+254 740 666 555';
+    if (heroLink) heroLink.href = settings.whatsapp_link || 'https://wa.me/254740666555';
+    if (footerMessage) footerMessage.textContent = settings.footer_message || 'Reach out to discover how Roam is transforming electric mobility.';
+    if (footerEmailLink) {
+      footerEmailLink.textContent = settings.contact_email || 'info@roam-electric.com';
+      footerEmailLink.href = 'mailto:' + (settings.contact_email || 'info@roam-electric.com');
+    }
+    if (footerPhoneLink) {
+      footerPhoneLink.textContent = settings.contact_phone || '+254 740 666 555';
+      footerPhoneLink.href = 'tel:' + (settings.contact_phone || '+254 740 666 555').replace(/[^+\d]/g, '');
+    }
+  }
+
   async function loadBikesAndSettings(){
+    await loadSiteSettings();
     const { data: bikeData, error: bikeErr } = await roamClient
       .from('motorcycles').select('*').eq('active', true).order('sort_order');
     if (bikeErr || !bikeData) { console.error(bikeErr); return; }
@@ -910,7 +954,10 @@
 
   document.getElementById('applyFinancingBtn').addEventListener('click', openApplyModal);
   document.getElementById('calcApplyBtn').addEventListener('click', openApplyModal);
-  document.getElementById('loginNavBtn').addEventListener('click', e=>{ e.preventDefault(); if(!currentUser) openModal('loginModal'); });
+  const loginNavBtn = document.getElementById('loginNavBtn');
+  if (loginNavBtn) {
+    loginNavBtn.addEventListener('click', e=>{ e.preventDefault(); if(!currentUser) openModal('loginModal'); });
+  }
 
   // ---- Application submit (creates account under the hood + saves application) ----
   document.getElementById('applyForm').addEventListener('submit', async (e)=>{
@@ -978,6 +1025,21 @@
     }
   });
 
+  async function redirectIfAdminUser(user) {
+    if (!user) return false;
+    const { data: profile, error } = await roamClient
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!error && profile && profile.role === 'admin') {
+      window.location.assign('/bigadmin');
+      return true;
+    }
+    return false;
+  }
+
   // ---- Login ----
   document.getElementById('loginForm').addEventListener('submit', async (e)=>{
     e.preventDefault();
@@ -985,11 +1047,16 @@
     const password = document.getElementById('loginPassword').value;
     const { data, error } = await roamClient.auth.signInWithPassword({ email, password });
     if (error){ showMsg('loginMsg', error.message, 'error'); return; }
+
     currentUser = data.user;
     updateAuthArea();
     closeModal('loginModal');
     document.getElementById('loginForm').reset();
-    openStatusModal();
+
+    const isAdmin = await redirectIfAdminUser(data.user);
+    if (!isAdmin) {
+      openStatusModal();
+    }
   });
 
   async function openStatusModal(){
@@ -1020,6 +1087,7 @@
 
   function updateAuthArea(){
     const area = document.getElementById('authArea');
+    if (!area) return;
     if (currentUser){
       area.innerHTML = `<div class="user-chip">Hi, ${(currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email.split('@')[0]}
         <button id="myAppsBtn">My Applications</button> · <button id="logoutBtn">Logout</button></div>`;
@@ -1030,15 +1098,14 @@
         updateAuthArea();
       });
     } else {
-      area.innerHTML = `<a href="#" class="nav-login" id="loginNavBtn">Login</a>`;
-      document.getElementById('loginNavBtn').addEventListener('click', e=>{ e.preventDefault(); openModal('loginModal'); });
+      area.innerHTML = '';
     }
   }
 
   (async function init(){
     await loadBikesAndSettings();
     const { data } = await roamClient.auth.getSession();
-    if (data && data.session){ currentUser = data.session.user; updateAuthArea(); }
+    if (data && data.session){ currentUser = data.session.user; }
     roamClient.auth.onAuthStateChange((_event, session)=>{
       currentUser = session ? session.user : null;
     });

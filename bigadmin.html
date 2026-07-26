@@ -458,6 +458,31 @@
       <!-- ================= FINANCING RATES PANEL ================= -->
       <section class="panel" id="panel-rates">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start;">
+          <div class="card-box">
+            <h3 style="font-size: 18px; margin-bottom: 20px;">Public Contact Settings</h3>
+            <div class="form-group">
+              <label>WhatsApp Label</label>
+              <input type="text" id="siteWhatsAppLabel" class="form-control" placeholder="+254 740 666 555">
+            </div>
+            <div class="form-group">
+              <label>WhatsApp Link</label>
+              <input type="text" id="siteWhatsAppLink" class="form-control" placeholder="https://wa.me/254740666555">
+            </div>
+            <div class="form-group">
+              <label>Contact Email</label>
+              <input type="email" id="siteContactEmail" class="form-control" placeholder="info@roam-electric.com">
+            </div>
+            <div class="form-group">
+              <label>Contact Phone</label>
+              <input type="text" id="siteContactPhone" class="form-control" placeholder="+254 740 666 555">
+            </div>
+            <div class="form-group">
+              <label>Footer Message</label>
+              <textarea id="siteFooterMessage" class="form-control" rows="3" placeholder="Reach out to discover how Roam is transforming electric mobility."></textarea>
+            </div>
+            <button class="btn-submit" id="saveSiteSettingsBtn">Save Public Contact Settings</button>
+            <div class="msg-banner" id="siteSettingsMsg"></div>
+          </div>
           <!-- Config Card -->
           <div class="card-box">
             <h3 style="font-size: 18px; margin-bottom: 20px;">Financing Rate Configurator</h3>
@@ -696,7 +721,7 @@
 
   // ================= LOAD DATA =================
   async function loadAllData() {
-    await Promise.all([loadBikes(), loadApplications(), loadUsers()]);
+    await Promise.all([loadBikes(), loadApplications(), loadUsers(), loadSiteSettingsForAdmin()]);
     updateKpis();
     populateRateBikeSelect();
   }
@@ -718,6 +743,18 @@
     const { data } = await roamClient.from('profiles').select('*').order('created_at', { ascending: false });
     allProfiles = data || [];
     renderUsers();
+  }
+
+  async function loadSiteSettingsForAdmin() {
+    const { data, error } = await roamClient.from('site_settings').select('*').order('updated_at', { ascending: false }).limit(1);
+    if (!error && data && data.length) {
+      const settings = data[0];
+      document.getElementById('siteWhatsAppLabel').value = settings.whatsapp_label || '';
+      document.getElementById('siteWhatsAppLink').value = settings.whatsapp_link || '';
+      document.getElementById('siteContactEmail').value = settings.contact_email || '';
+      document.getElementById('siteContactPhone').value = settings.contact_phone || '';
+      document.getElementById('siteFooterMessage').value = settings.footer_message || '';
+    }
   }
 
   // ================= KPIS =================
@@ -1080,6 +1117,34 @@
     const { error } = await roamClient.from('financing_settings').upsert(payload, { onConflict: 'motorcycle_id' });
     if (error) { showMsg('ratesMsg', error.message, 'error'); return; }
     showMsg('ratesMsg', 'Financing rates updated successfully!', 'success');
+  });
+
+  document.getElementById('saveSiteSettingsBtn').addEventListener('click', async () => {
+    const payload = {
+      whatsapp_label: document.getElementById('siteWhatsAppLabel').value.trim(),
+      whatsapp_link: document.getElementById('siteWhatsAppLink').value.trim(),
+      contact_email: document.getElementById('siteContactEmail').value.trim(),
+      contact_phone: document.getElementById('siteContactPhone').value.trim(),
+      footer_message: document.getElementById('siteFooterMessage').value.trim(),
+      updated_at: new Date().toISOString()
+    };
+
+    const { data: existingRows, error: selectError } = await roamClient.from('site_settings').select('id').limit(1);
+    if (selectError) {
+      showMsg('siteSettingsMsg', selectError.message, 'error');
+      return;
+    }
+
+    const existing = existingRows && existingRows.length ? existingRows[0] : null;
+    let error;
+    if (existing) {
+      ({ error } = await roamClient.from('site_settings').update(payload).eq('id', existing.id));
+    } else {
+      ({ error } = await roamClient.from('site_settings').insert(payload));
+    }
+
+    if (error) { showMsg('siteSettingsMsg', error.message, 'error'); return; }
+    showMsg('siteSettingsMsg', 'Public contact settings updated successfully!', 'success');
   });
 
   // ================= USERS LOGIC =================
