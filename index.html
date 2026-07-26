@@ -318,6 +318,25 @@
     .calc-card{padding:24px 20px;}
   }
 
+  /* ---------- TRACK LOAN ---------- */
+  .track-section{padding:0 0 100px; background:var(--paper);}
+  .track-card{background:#fff; border:1px solid #ececec; border-radius:24px; padding:32px; box-shadow:0 18px 50px rgba(12,12,13,0.06);}
+  .track-grid{display:grid; grid-template-columns:1.1fr 0.9fr; gap:28px; align-items:start;}
+  .track-form{display:grid; gap:14px; margin-top:20px;}
+  .track-form input{width:100%; padding:13px 14px; border-radius:12px; border:1.5px solid #e2e2e0; font-size:15px; font-family:inherit;}
+  .track-form input:focus{outline:none; border-color:var(--roam-orange);}
+  .track-form button{padding:14px 18px; border-radius:100px; border:none; background:var(--roam-orange); color:#fff; font-weight:700; cursor:pointer;}
+  .track-form button:hover{background:var(--roam-orange-dark);} 
+  .track-result{background:#faf7f4; border:1px solid #f0e5db; border-radius:18px; padding:20px; min-height:220px; display:flex; flex-direction:column; gap:12px;}
+  .track-result .badge{display:inline-block; width:fit-content; padding:5px 11px; border-radius:999px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em;}
+  .track-result .status-pending{background:#fff3e0; color:#b46c00;}
+  .track-result .status-approved{background:#e6f7ec; color:#1e7d43;}
+  .track-result .status-rejected{background:#fdeeee; color:#a12525;}
+  .track-result .meta{font-size:14px; color:#5f5f66; line-height:1.7;}
+  .track-empty{font-size:14px; color:#666; line-height:1.6;}
+  @media (max-width:900px){.track-grid{grid-template-columns:1fr;}}
+  @media (max-width:560px){.track-card{padding:24px 20px;}}
+
   /* ---------- MODALS ---------- */
   .modal-overlay{
     display:none; position:fixed; inset:0; z-index:1000; background:rgba(10,10,10,0.72);
@@ -480,6 +499,28 @@
         </div>
       </div>
       <button class="btn btn-solid modal-submit" id="calcApplyBtn">Apply With This Plan</button>
+    </div>
+  </div>
+</section>
+
+<section class="section track-section">
+  <div class="wrap">
+    <div class="track-card">
+      <div class="track-grid">
+        <div>
+          <span class="eyebrow">Loan Tracking</span>
+          <h2 style="font-size:clamp(28px,3.6vw,40px);">Track Your Financing Application</h2>
+          <p style="margin-top:14px; font-size:16px; color:#5f5f66; line-height:1.6;">Enter your application ID and the email used during submission to check the latest status of your financing request.</p>
+          <form class="track-form" id="trackLoanForm">
+            <input type="text" id="trackApplicationId" placeholder="Application ID" required>
+            <input type="email" id="trackEmail" placeholder="Email used for application" required>
+            <button type="submit">Track My Loan</button>
+          </form>
+        </div>
+        <div class="track-result" id="trackResult">
+          <div class="track-empty">Your loan status will appear here after you enter your application ID and email.</div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -884,6 +925,69 @@
       setupBikeControls(calcState.bikeId);
     }
   }
+
+  async function trackLoanByIdAndEmail(applicationId, email){
+    const trackResult = document.getElementById('trackResult');
+    if (!trackResult) return;
+
+    trackResult.innerHTML = '<div class="track-empty">Searching your application…</div>';
+
+    const normalizedId = applicationId.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    let { data, error } = await roamClient
+      .from('financing_applications')
+      .select('*')
+      .eq('id', normalizedId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Track lookup error:', error);
+      trackResult.innerHTML = '<div class="track-empty">We could not load that application right now. Please try again in a moment.</div>';
+      return;
+    }
+
+    if (!data) {
+      const { data: fallbackData, error: fallbackError } = await roamClient
+        .from('financing_applications')
+        .select('*')
+        .ilike('email', `%${normalizedEmail}%`)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (fallbackError || !fallbackData || !fallbackData.length) {
+        trackResult.innerHTML = '<div class="track-empty">No application matched that ID and email. Please double-check the details and try again.</div>';
+        return;
+      }
+
+      data = fallbackData[0];
+    } else if (data.email && normalizedEmail && data.email.toLowerCase() !== normalizedEmail) {
+      trackResult.innerHTML = '<div class="track-empty">The application ID matched, but the email did not. Please verify the email you used when submitting.</div>';
+      return;
+    }
+
+    const bike = bikes.find(b => b.id === data.motorcycle_id);
+    const statusClass = `status-${data.status || 'pending'}`;
+    trackResult.innerHTML = `
+      <span class="badge ${statusClass}">${(data.status || 'pending').toUpperCase()}</span>
+      <div style="font-weight:800; font-size:18px;">${bike ? bike.name : 'Motorcycle Application'}</div>
+      <div class="meta">
+        <div><strong>Applicant:</strong> ${data.full_name || '—'}</div>
+        <div><strong>Application ID:</strong> ${data.id}</div>
+        <div><strong>Deposit:</strong> ${formatKES(data.deposit_amount || 0)} (${data.deposit_percent || 0}%)</div>
+        <div><strong>Tenure:</strong> ${data.tenure_months || 0} months</div>
+        <div><strong>Monthly Installment:</strong> ${formatKES(data.monthly_installment || 0)}/mo</div>
+        <div><strong>Submitted:</strong> ${new Date(data.created_at).toLocaleDateString()}</div>
+      </div>
+    `;
+  }
+
+  document.getElementById('trackLoanForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const applicationId = document.getElementById('trackApplicationId').value;
+    const email = document.getElementById('trackEmail').value;
+    await trackLoanByIdAndEmail(applicationId, email);
+  });
 
   function setupBikeControls(bikeId){
     const s = settingsByBike[bikeId] || { min_deposit_percent:20, deposit_options:[20,30,50], tenure_months_options:[6,12,18,24], monthly_interest_rate:4 };
